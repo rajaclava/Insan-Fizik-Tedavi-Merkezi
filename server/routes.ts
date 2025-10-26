@@ -1,10 +1,72 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertAppointmentSchema, insertContactMessageSchema } from "@shared/schema";
+import { insertAppointmentSchema, insertContactMessageSchema, users } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
+import passport from "passport";
+import { requireAuth } from "./auth";
+import { db } from "./db";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Auth routes
+  app.post("/api/auth/login", (req, res, next) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) {
+        return res.status(500).json({ message: "Sunucu hatası" });
+      }
+      if (!user) {
+        return res.status(401).json({ message: info?.message || "Giriş başarısız" });
+      }
+      req.logIn(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Oturum açılamadı" });
+        }
+        return res.json({ user });
+      });
+    })(req, res, next);
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    req.logout(() => {
+      res.json({ message: "Çıkış yapıldı" });
+    });
+  });
+
+  app.get("/api/auth/me", (req, res) => {
+    if (req.isAuthenticated()) {
+      res.json({ user: req.user });
+    } else {
+      res.status(401).json({ message: "Giriş yapılmamış" });
+    }
+  });
+
+  // Create initial admin user if none exists
+  app.post("/api/auth/setup", async (req, res) => {
+    try {
+      const existingUsers = await db.select().from(users).limit(1);
+      if (existingUsers.length > 0) {
+        return res.status(400).json({ message: "Admin kullanıcı zaten mevcut" });
+      }
+
+      const { username, password, email } = req.body;
+      if (!username || !password || !email) {
+        return res.status(400).json({ message: "Tüm alanları doldurun" });
+      }
+
+      const [newUser] = await db.insert(users).values({
+        username,
+        password, // In production, hash this!
+        email,
+        role: "admin",
+      }).returning();
+
+      const { password: _, ...userWithoutPassword } = newUser;
+      res.json({ user: userWithoutPassword, message: "Admin kullanıcı oluşturuldu" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.post("/api/appointments", async (req, res) => {
     try {
       const validatedData = insertAppointmentSchema.parse(req.body);
@@ -20,7 +82,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/appointments", async (req, res) => {
+  app.get("/api/appointments", requireAuth, async (req, res) => {
     try {
       const appointments = await storage.getAllAppointments();
       res.json(appointments);
@@ -44,7 +106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/contact", async (req, res) => {
+  app.get("/api/contact", requireAuth, async (req, res) => {
     try {
       const messages = await storage.getAllContactMessages();
       res.json(messages);

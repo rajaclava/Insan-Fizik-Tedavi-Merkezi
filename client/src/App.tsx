@@ -14,6 +14,8 @@ import Team from "@/pages/Team";
 import Blog from "@/pages/Blog";
 import Contact from "@/pages/Contact";
 import Appointment from "@/pages/Appointment";
+import AdminLogin from "@/pages/AdminLogin";
+import AdminDashboard from "@/pages/AdminDashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -26,6 +28,8 @@ function Router() {
       <Route path="/blog" component={Blog} />
       <Route path="/iletisim" component={Contact} />
       <Route path="/randevu" component={Appointment} />
+      <Route path="/admin/login" component={AdminLogin} />
+      <Route path="/admin" component={AdminDashboard} />
       <Route component={NotFound} />
     </Switch>
   );
