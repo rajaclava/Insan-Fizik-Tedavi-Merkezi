@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -82,13 +82,23 @@ export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({
 export type InsertBlogPost = z.infer<typeof insertBlogPostSchema>;
 export type BlogPost = typeof blogPosts.$inferSelect;
 
-// Testimonial type (static data)
-export type Testimonial = {
-  id: string;
-  name: string;
-  treatment: string;
-  text: string;
-};
+// Testimonials table
+export const testimonials = pgTable("testimonials", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  review: text("review").notNull(),
+  rating: integer("rating").notNull().default(5),
+  approved: boolean("approved").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertTestimonialSchema = createInsertSchema(testimonials).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTestimonial = z.infer<typeof insertTestimonialSchema>;
+export type Testimonial = typeof testimonials.$inferSelect;
 
 // Admin users table
 export const users = pgTable("users", {

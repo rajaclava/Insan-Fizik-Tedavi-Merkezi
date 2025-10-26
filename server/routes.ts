@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertAppointmentSchema, insertContactMessageSchema, insertBlogPostSchema, users } from "@shared/schema";
+import { insertAppointmentSchema, insertContactMessageSchema, insertBlogPostSchema, insertTestimonialSchema, users } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import passport from "passport";
 import { requireAuth } from "./auth";
@@ -222,6 +222,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Blog post deleted" });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete blog post" });
+    }
+  });
+
+  // Testimonials routes
+  app.get("/api/testimonials", requireAuth, async (req, res) => {
+    try {
+      const testimonials = await storage.getAllTestimonials();
+      res.json(testimonials);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch testimonials" });
+    }
+  });
+
+  app.get("/api/testimonials/approved", async (req, res) => {
+    try {
+      const testimonials = await storage.getApprovedTestimonials();
+      res.json(testimonials);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch approved testimonials" });
+    }
+  });
+
+  app.post("/api/testimonials", requireAuth, async (req, res) => {
+    try {
+      const validatedData = insertTestimonialSchema.parse(req.body);
+      const testimonial = await storage.createTestimonial(validatedData);
+      res.status(201).json(testimonial);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ error: validationError.message });
+      } else {
+        res.status(500).json({ error: "Failed to create testimonial" });
+      }
+    }
+  });
+
+  app.patch("/api/testimonials/:id", requireAuth, async (req, res) => {
+    try {
+      const validatedData = insertTestimonialSchema.partial().parse(req.body);
+      const testimonial = await storage.updateTestimonial(req.params.id, validatedData);
+      if (!testimonial) {
+        return res.status(404).json({ error: "Testimonial not found" });
+      }
+      res.json(testimonial);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ error: validationError.message });
+      } else {
+        res.status(500).json({ error: "Failed to update testimonial" });
+      }
+    }
+  });
+
+  app.delete("/api/testimonials/:id", requireAuth, async (req, res) => {
+    try {
+      await storage.deleteTestimonial(req.params.id);
+      res.json({ message: "Testimonial deleted" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete testimonial" });
     }
   });
 

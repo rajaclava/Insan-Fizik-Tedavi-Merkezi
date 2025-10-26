@@ -20,6 +20,7 @@ import {
   Trash2,
   Eye,
   FileText,
+  Star,
 } from "lucide-react";
 import type { Appointment, ContactMessage } from "@shared/schema";
 import { SEO } from "@/components/SEO";
@@ -189,7 +190,13 @@ export default function AdminDashboard() {
               <Link href="/admin/blog">
                 <Button variant="outline" data-testid="link-blog-manager">
                   <FileText className="w-4 h-4 mr-2" />
-                  Blog Yönetimi
+                  Blog
+                </Button>
+              </Link>
+              <Link href="/admin/testimonials">
+                <Button variant="outline" data-testid="link-testimonials-manager">
+                  <Star className="w-4 h-4 mr-2" />
+                  Yorumlar
                 </Button>
               </Link>
               <Button

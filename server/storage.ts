@@ -5,9 +5,12 @@ import {
   type InsertContactMessage,
   type BlogPost,
   type InsertBlogPost,
+  type Testimonial,
+  type InsertTestimonial,
   appointments,
   contactMessages,
   blogPosts,
+  testimonials,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -29,17 +32,26 @@ export interface IStorage {
   getBlogPost(id: string): Promise<BlogPost | undefined>;
   updateBlogPost(id: string, post: Partial<InsertBlogPost>): Promise<BlogPost | undefined>;
   deleteBlogPost(id: string): Promise<void>;
+
+  createTestimonial(testimonial: InsertTestimonial): Promise<Testimonial>;
+  getAllTestimonials(): Promise<Testimonial[]>;
+  getApprovedTestimonials(): Promise<Testimonial[]>;
+  getTestimonial(id: string): Promise<Testimonial | undefined>;
+  updateTestimonial(id: string, testimonial: Partial<InsertTestimonial>): Promise<Testimonial | undefined>;
+  deleteTestimonial(id: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
   private appointments: Map<string, Appointment>;
   private contactMessages: Map<string, ContactMessage>;
   private blogPosts: Map<string, BlogPost>;
+  private testimonials: Map<string, Testimonial>;
 
   constructor() {
     this.appointments = new Map();
     this.contactMessages = new Map();
     this.blogPosts = new Map();
+    this.testimonials = new Map();
   }
 
   async createAppointment(insertAppointment: InsertAppointment): Promise<Appointment> {
@@ -134,6 +146,45 @@ export class MemStorage implements IStorage {
   async deleteBlogPost(id: string): Promise<void> {
     this.blogPosts.delete(id);
   }
+
+  async createTestimonial(insertTestimonial: InsertTestimonial): Promise<Testimonial> {
+    const id = randomUUID();
+    const testimonial: Testimonial = {
+      ...insertTestimonial,
+      id,
+      createdAt: new Date(),
+    };
+    this.testimonials.set(id, testimonial);
+    return testimonial;
+  }
+
+  async getAllTestimonials(): Promise<Testimonial[]> {
+    return Array.from(this.testimonials.values()).sort(
+      (a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0)
+    );
+  }
+
+  async getApprovedTestimonials(): Promise<Testimonial[]> {
+    return Array.from(this.testimonials.values())
+      .filter(t => t.approved)
+      .sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+  }
+
+  async getTestimonial(id: string): Promise<Testimonial | undefined> {
+    return this.testimonials.get(id);
+  }
+
+  async updateTestimonial(id: string, updates: Partial<InsertTestimonial>): Promise<Testimonial | undefined> {
+    const testimonial = this.testimonials.get(id);
+    if (!testimonial) return undefined;
+    const updated = { ...testimonial, ...updates };
+    this.testimonials.set(id, updated);
+    return updated;
+  }
+
+  async deleteTestimonial(id: string): Promise<void> {
+    this.testimonials.delete(id);
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -202,6 +253,37 @@ export class DatabaseStorage implements IStorage {
 
   async deleteBlogPost(id: string): Promise<void> {
     await db.delete(blogPosts).where(eq(blogPosts.id, id));
+  }
+
+  async createTestimonial(insertTestimonial: InsertTestimonial): Promise<Testimonial> {
+    const [testimonial] = await db.insert(testimonials).values(insertTestimonial).returning();
+    return testimonial;
+  }
+
+  async getAllTestimonials(): Promise<Testimonial[]> {
+    return await db.select().from(testimonials).orderBy(desc(testimonials.createdAt));
+  }
+
+  async getApprovedTestimonials(): Promise<Testimonial[]> {
+    return await db.select().from(testimonials).where(eq(testimonials.approved, true)).orderBy(desc(testimonials.createdAt));
+  }
+
+  async getTestimonial(id: string): Promise<Testimonial | undefined> {
+    const [testimonial] = await db.select().from(testimonials).where(eq(testimonials.id, id));
+    return testimonial;
+  }
+
+  async updateTestimonial(id: string, updates: Partial<InsertTestimonial>): Promise<Testimonial | undefined> {
+    const [updated] = await db
+      .update(testimonials)
+      .set(updates)
+      .where(eq(testimonials.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteTestimonial(id: string): Promise<void> {
+    await db.delete(testimonials).where(eq(testimonials.id, id));
   }
 }
 

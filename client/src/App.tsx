@@ -17,6 +17,7 @@ import Appointment from "@/pages/Appointment";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import AdminBlogManager from "@/pages/AdminBlogManager";
+import AdminTestimonialsManager from "@/pages/AdminTestimonialsManager";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -32,6 +33,7 @@ function Router() {
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/blog" component={AdminBlogManager} />
+      <Route path="/admin/testimonials" component={AdminTestimonialsManager} />
       <Route component={NotFound} />
     </Switch>
   );

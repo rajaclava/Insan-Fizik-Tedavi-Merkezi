@@ -1,8 +1,10 @@
 import { Link } from "wouter";
-import { Phone, MessageCircle, Activity, Heart, Award, Users, ChevronRight } from "lucide-react";
+import { Phone, MessageCircle, Activity, Heart, Award, Users, ChevronRight, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SEO } from "@/components/SEO";
+import { useQuery } from "@tanstack/react-query";
+import type { Testimonial } from "@shared/schema";
 import heroImage from "@assets/generated_images/Hero_physiotherapy_session_image_66c498cf.png";
 import manualTherapyImage from "@assets/generated_images/Manual_therapy_service_image_90be64cf.png";
 import orthoRehabImage from "@assets/generated_images/Orthopedic_rehabilitation_service_image_60ec52b1.png";
@@ -33,26 +35,11 @@ export default function Home() {
     },
   ];
 
-  const testimonials = [
-    {
-      id: "1",
-      name: "Ayşe Yılmaz",
-      treatment: "Bel Fıtığı Tedavisi",
-      text: "Yıllardır çektiğim bel ağrılarım burada aldığım tedavilerle kayboldu. Profesyonel ve ilgili bir ekip. Herkese tavsiye ederim.",
-    },
-    {
-      id: "2",
-      name: "Mehmet Demir",
-      treatment: "Manuel Terapi",
-      text: "Boyun ağrılarım için başvurmuştum. Manuel terapi seanslarından sonra kendimi çok daha iyi hissediyorum. Teşekkürler.",
-    },
-    {
-      id: "3",
-      name: "Zeynep Kaya",
-      treatment: "Skolyoz Tedavisi",
-      text: "Kızımın skolyoz tedavisi için geldik. Egzersiz programları ve yakın takip sayesinde harika sonuçlar aldık.",
-    },
-  ];
+  const { data: testimonials, isLoading: testimonialsLoading } = useQuery<Testimonial[]>({
+    queryKey: ["/api/testimonials/approved"],
+  });
+
+  const safeTestimonials = testimonials || [];
 
   const whatsappNumber = "905326127244";
   const whatsappUrl = `https://wa.me/${whatsappNumber}`;
@@ -234,32 +221,42 @@ export default function Home() {
               Tedavi sürecinden geçen hastalarımızın deneyimlerini okuyun.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {testimonials.map((testimonial) => (
-              <Card key={testimonial.id} className="hover-elevate" data-testid={`card-testimonial-${testimonial.id}`}>
-                <CardContent className="pt-6">
-                  <div className="mb-4">
-                    <div className="flex gap-1 mb-2">
-                      {[...Array(5)].map((_, i) => (
-                        <svg
-                          key={i}
-                          className="w-5 h-5 fill-primary"
-                          viewBox="0 0 20 20"
-                        >
-                          <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                        </svg>
-                      ))}
+          {testimonialsLoading ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Yükleniyor...</p>
+            </div>
+          ) : safeTestimonials.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Henüz yorum bulunmuyor</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {safeTestimonials.map((testimonial) => (
+                <Card key={testimonial.id} className="hover-elevate" data-testid={`card-testimonial-${testimonial.id}`}>
+                  <CardContent className="pt-6">
+                    <div className="mb-4">
+                      <div className="flex gap-1 mb-2">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`w-5 h-5 ${
+                              i < testimonial.rating
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "text-muted-foreground"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-muted-foreground italic mb-4">"{testimonial.review}"</p>
                     </div>
-                    <p className="text-muted-foreground italic mb-4">"{testimonial.text}"</p>
-                  </div>
-                  <div className="border-t pt-4">
-                    <p className="font-semibold text-foreground">{testimonial.name}</p>
-                    <p className="text-sm text-muted-foreground">{testimonial.treatment}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    <div className="border-t pt-4">
+                      <p className="font-semibold text-foreground">{testimonial.name}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
