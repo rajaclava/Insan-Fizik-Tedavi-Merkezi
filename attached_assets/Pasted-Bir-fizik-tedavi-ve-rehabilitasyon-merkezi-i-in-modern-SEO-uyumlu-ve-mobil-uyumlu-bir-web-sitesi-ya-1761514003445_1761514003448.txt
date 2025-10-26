@@ -1,0 +1,61 @@
+Bir fizik tedavi ve rehabilitasyon merkezi için modern, SEO uyumlu ve mobil uyumlu bir web sitesi yap.
+Merkezin adı: İnsan Fizik Tedavi ve Rehabilitasyon Merkezi
+Alan adı: insanfiziktedavi.com
+Renk paleti: açık mavi (#3cb3d9), beyaz (#ffffff), koyu lacivert (#0e2240)
+Tema tarzı: sağlık sektörü, güven veren, temiz ve sade görünüm
+Yazı tipi: Poppins veya Open Sans
+Dil: Türkçe
+
+### Site yapısı:
+1. **Ana Sayfa**
+   - Hero alanı: büyük görsel (fizik tedavi yapan uzman veya hasta görüntüsü)
+   - Başlık: “Uzman Kadromuzla Ağrısız Bir Yaşama Adım Atın”
+   - Alt yazı: “Fizik tedavi, manuel terapi, bel-boyun fıtığı, skolyoz ve ortopedik rehabilitasyon alanlarında profesyonel destek.”
+   - Butonlar: “📞 Hemen Ara” ve “💬 WhatsApp’tan Yaz”
+   - Hakkımızda özet kutusu
+   - Hizmetler önizlemesi (3-4 kart)
+   - Hasta yorumları bölümü
+   - İletişim ve konum kutusu (Google Maps embed)
+
+2. **Hakkımızda Sayfası**
+   - Merkezin misyonu, vizyonu, ekibin deneyimi ve hedefleri
+   - Fotoğraf galerisi (klinikten veya fizyoterapi seanslarından)
+
+3. **Hizmetler Sayfası**
+   - Fizik Tedavi
+   - Manuel Terapi
+   - Ortopedik Rehabilitasyon
+   - Skolyoz Tedavisi
+   - Bel ve Boyun Fıtığı Tedavisi
+   - Nörolojik Rehabilitasyon
+   Her hizmet için:
+     - Görsel
+     - Açıklama (150-200 kelime)
+     - CTA butonu (WhatsApp ile bilgi al)
+
+4. **Uzman Kadromuz**
+   - Fizyoterapistlerin fotoğrafı, adı, unvanı, kısa tanıtım
+
+5. **Blog Sayfası**
+   - SEO uyumlu yazılar: “Fizik Tedavi Nedir?”, “Bel Fıtığına Ne İyi Gelir?”, “Evde Egzersiz Önerileri” vb.
+
+6. **İletişim Sayfası**
+   - Telefon: 0 (555) 000 00 00
+   - WhatsApp: wa.me/905550000000
+   - Adres: İstanbul Büyükçekmece, Mimaroba Mah.
+   - Google Maps iframe
+   - İletişim formu (isim, telefon, mesaj alanları)
+
+### Teknik Özellikler:
+- HTML5 + CSS3 + JS (veya Tailwind)
+- Responsive (mobil, tablet, masaüstü)
+- Google Fonts ve Font Awesome ikonları kullanılabilir
+- SEO meta etiketleri, başlık etiketleri (H1-H3), açıklama ve Open Graph etiketleri
+- Hızlı açılan, optimize edilmiş görseller
+- Footer’da: sosyal medya ikonları (Instagram, Facebook, YouTube)
+- Sabit WhatsApp butonu sağ altta
+
+### Ekstra:
+- Tüm metinler Türkçe ve profesyonel dille yazılsın
+- Butonlar canlı renkli olsun (örneğin WhatsApp yeşili)
+- Temiz, kullanıcı dostu, güven veren bir yapı oluştur
