@@ -91,6 +91,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/appointments/:id", requireAuth, async (req, res) => {
+    try {
+      const appointment = await storage.getAppointment(req.params.id);
+      if (!appointment) {
+        return res.status(404).json({ error: "Appointment not found" });
+      }
+      res.json(appointment);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch appointment" });
+    }
+  });
+
+  app.patch("/api/appointments/:id/status", requireAuth, async (req, res) => {
+    try {
+      const { status } = req.body;
+      if (!status || !["pending", "approved", "cancelled", "completed"].includes(status)) {
+        return res.status(400).json({ error: "Invalid status" });
+      }
+      const appointment = await storage.updateAppointmentStatus(req.params.id, status);
+      if (!appointment) {
+        return res.status(404).json({ error: "Appointment not found" });
+      }
+      res.json(appointment);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update appointment" });
+    }
+  });
+
+  app.delete("/api/appointments/:id", requireAuth, async (req, res) => {
+    try {
+      await storage.deleteAppointment(req.params.id);
+      res.json({ message: "Appointment deleted" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete appointment" });
+    }
+  });
+
   app.post("/api/contact", async (req, res) => {
     try {
       const validatedData = insertContactMessageSchema.parse(req.body);
@@ -112,6 +149,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(messages);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch messages" });
+    }
+  });
+
+  app.delete("/api/contact/:id", requireAuth, async (req, res) => {
+    try {
+      await storage.deleteContactMessage(req.params.id);
+      res.json({ message: "Message deleted" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete message" });
     }
   });
 
