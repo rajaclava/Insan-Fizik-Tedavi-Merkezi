@@ -3,8 +3,11 @@ import {
   type InsertAppointment,
   type ContactMessage,
   type InsertContactMessage,
+  type BlogPost,
+  type InsertBlogPost,
   appointments,
   contactMessages,
+  blogPosts,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -20,15 +23,23 @@ export interface IStorage {
   createContactMessage(message: InsertContactMessage): Promise<ContactMessage>;
   getAllContactMessages(): Promise<ContactMessage[]>;
   deleteContactMessage(id: string): Promise<void>;
+
+  createBlogPost(post: InsertBlogPost): Promise<BlogPost>;
+  getAllBlogPosts(): Promise<BlogPost[]>;
+  getBlogPost(id: string): Promise<BlogPost | undefined>;
+  updateBlogPost(id: string, post: Partial<InsertBlogPost>): Promise<BlogPost | undefined>;
+  deleteBlogPost(id: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
   private appointments: Map<string, Appointment>;
   private contactMessages: Map<string, ContactMessage>;
+  private blogPosts: Map<string, BlogPost>;
 
   constructor() {
     this.appointments = new Map();
     this.contactMessages = new Map();
+    this.blogPosts = new Map();
   }
 
   async createAppointment(insertAppointment: InsertAppointment): Promise<Appointment> {
@@ -88,6 +99,41 @@ export class MemStorage implements IStorage {
   async deleteContactMessage(id: string): Promise<void> {
     this.contactMessages.delete(id);
   }
+
+  async createBlogPost(insertPost: InsertBlogPost): Promise<BlogPost> {
+    const id = randomUUID();
+    const post: BlogPost = {
+      ...insertPost,
+      imageUrl: insertPost.imageUrl ?? null,
+      published: insertPost.published ?? new Date(),
+      id,
+      createdAt: new Date(),
+    };
+    this.blogPosts.set(id, post);
+    return post;
+  }
+
+  async getAllBlogPosts(): Promise<BlogPost[]> {
+    return Array.from(this.blogPosts.values()).sort(
+      (a, b) => (b.published?.getTime() || 0) - (a.published?.getTime() || 0)
+    );
+  }
+
+  async getBlogPost(id: string): Promise<BlogPost | undefined> {
+    return this.blogPosts.get(id);
+  }
+
+  async updateBlogPost(id: string, updates: Partial<InsertBlogPost>): Promise<BlogPost | undefined> {
+    const post = this.blogPosts.get(id);
+    if (!post) return undefined;
+    const updated = { ...post, ...updates };
+    this.blogPosts.set(id, updated);
+    return updated;
+  }
+
+  async deleteBlogPost(id: string): Promise<void> {
+    this.blogPosts.delete(id);
+  }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -129,6 +175,33 @@ export class DatabaseStorage implements IStorage {
 
   async deleteContactMessage(id: string): Promise<void> {
     await db.delete(contactMessages).where(eq(contactMessages.id, id));
+  }
+
+  async createBlogPost(insertPost: InsertBlogPost): Promise<BlogPost> {
+    const [post] = await db.insert(blogPosts).values(insertPost).returning();
+    return post;
+  }
+
+  async getAllBlogPosts(): Promise<BlogPost[]> {
+    return await db.select().from(blogPosts).orderBy(desc(blogPosts.published));
+  }
+
+  async getBlogPost(id: string): Promise<BlogPost | undefined> {
+    const [post] = await db.select().from(blogPosts).where(eq(blogPosts.id, id));
+    return post;
+  }
+
+  async updateBlogPost(id: string, updates: Partial<InsertBlogPost>): Promise<BlogPost | undefined> {
+    const [updated] = await db
+      .update(blogPosts)
+      .set(updates)
+      .where(eq(blogPosts.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteBlogPost(id: string): Promise<void> {
+    await db.delete(blogPosts).where(eq(blogPosts.id, id));
   }
 }
 

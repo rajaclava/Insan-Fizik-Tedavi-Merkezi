@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import {
   Calendar,
@@ -19,6 +19,7 @@ import {
   XCircle,
   Trash2,
   Eye,
+  FileText,
 } from "lucide-react";
 import type { Appointment, ContactMessage } from "@shared/schema";
 import { SEO } from "@/components/SEO";
@@ -179,20 +180,28 @@ export default function AdminDashboard() {
 
       <header className="bg-card border-b">
         <div className="container mx-auto px-4 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
               <h1 className="text-2xl font-semibold text-foreground">Yönetim Paneli</h1>
               <p className="text-sm text-muted-foreground">Hoş geldiniz, {user.username}</p>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => logoutMutation.mutate()}
-              disabled={logoutMutation.isPending}
-              data-testid="button-logout"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Çıkış Yap
-            </Button>
+            <div className="flex gap-2">
+              <Link href="/admin/blog">
+                <Button variant="outline" data-testid="link-blog-manager">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Blog Yönetimi
+                </Button>
+              </Link>
+              <Button
+                variant="outline"
+                onClick={() => logoutMutation.mutate()}
+                disabled={logoutMutation.isPending}
+                data-testid="button-logout"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Çıkış Yap
+              </Button>
+            </div>
           </div>
         </div>
       </header>

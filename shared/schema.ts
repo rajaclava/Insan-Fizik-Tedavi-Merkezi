@@ -61,17 +61,26 @@ export type TeamMember = {
   image?: string;
 };
 
-// Blog posts type (static data)
-export type BlogPost = {
-  id: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  category: string;
-  image: string;
-  readTime: string;
-  publishedAt: string;
-};
+// Blog posts table
+export const blogPosts = pgTable("blog_posts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  excerpt: text("excerpt").notNull(),
+  content: text("content").notNull(),
+  category: text("category").notNull(),
+  imageUrl: text("image_url"),
+  readTime: text("read_time").notNull().default("5 dakika"),
+  published: timestamp("published").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertBlogPost = z.infer<typeof insertBlogPostSchema>;
+export type BlogPost = typeof blogPosts.$inferSelect;
 
 // Testimonial type (static data)
 export type Testimonial = {

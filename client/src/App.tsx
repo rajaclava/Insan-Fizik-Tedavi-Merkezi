@@ -16,6 +16,7 @@ import Contact from "@/pages/Contact";
 import Appointment from "@/pages/Appointment";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
+import AdminBlogManager from "@/pages/AdminBlogManager";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -30,6 +31,7 @@ function Router() {
       <Route path="/randevu" component={Appointment} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin/blog" component={AdminBlogManager} />
       <Route component={NotFound} />
     </Switch>
   );
