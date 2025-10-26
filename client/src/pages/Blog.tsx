@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { SEO } from "@/components/SEO";
 import manualTherapyImage from "@assets/generated_images/Manual_therapy_service_image_90be64cf.png";
 import orthoRehabImage from "@assets/generated_images/Orthopedic_rehabilitation_service_image_60ec52b1.png";
 import scoliosisImage from "@assets/generated_images/Scoliosis_treatment_service_image_50477469.png";
@@ -69,6 +70,11 @@ export default function Blog() {
 
   return (
     <div>
+      <SEO
+        title="Blog"
+        description="Fizik tedavi, rehabilitasyon ve sağlıklı yaşam hakkında güncel bilgiler, uzman tavsiyeleri ve egzersiz önerileri."
+        path="/blog"
+      />
       <section className="py-16 lg:py-24 bg-muted">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="text-center mb-12">

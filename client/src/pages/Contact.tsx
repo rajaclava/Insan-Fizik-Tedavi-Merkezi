@@ -10,6 +10,7 @@ import { insertContactMessageSchema, type InsertContactMessage } from "@shared/s
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { SEO } from "@/components/SEO";
 
 export default function Contact() {
   const { toast } = useToast();
@@ -50,6 +51,11 @@ export default function Contact() {
 
   return (
     <div>
+      <SEO
+        title="İletişim"
+        description="İnsan Fizik Tedavi ve Rehabilitasyon Merkezi - Büyükçekmece. Telefon: +90 532 612 72 44. Randevu ve bilgi için bizimle iletişime geçin."
+        path="/iletisim"
+      />
       <section className="py-16 lg:py-24 bg-muted">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="text-center mb-12">

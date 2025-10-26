@@ -1,6 +1,7 @@
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SEO } from "@/components/SEO";
 import manualTherapyImage from "@assets/generated_images/Manual_therapy_service_image_90be64cf.png";
 import orthoRehabImage from "@assets/generated_images/Orthopedic_rehabilitation_service_image_60ec52b1.png";
 import scoliosisImage from "@assets/generated_images/Scoliosis_treatment_service_image_50477469.png";
@@ -56,6 +57,11 @@ export default function Services() {
 
   return (
     <div>
+      <SEO
+        title="Hizmetlerimiz"
+        description="Fizik tedavi, manuel terapi, ortopedik rehabilitasyon, skolyoz tedavisi, bel-boyun fıtığı ve nörolojik rehabilitasyon hizmetlerimiz hakkında detaylı bilgi alın."
+        path="/hizmetler"
+      />
       <section className="py-16 lg:py-24 bg-muted">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="text-center mb-12">

@@ -1,6 +1,7 @@
 import { Award, GraduationCap } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { SEO } from "@/components/SEO";
 
 export default function Team() {
   const team = [
@@ -36,6 +37,11 @@ export default function Team() {
 
   return (
     <div>
+      <SEO
+        title="Uzman Kadromuz"
+        description="Deneyimli ve sertifikalı fizyoterapistlerimiz. Manuel terapi, Bobath, McKenzie, Schroth sertifikalarına sahip uzman ekibimiz."
+        path="/ekip"
+      />
       <section className="py-16 lg:py-24 bg-muted">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="text-center mb-12">

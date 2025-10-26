@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { Phone, MessageCircle, Activity, Heart, Award, Users, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SEO } from "@/components/SEO";
 import heroImage from "@assets/generated_images/Hero_physiotherapy_session_image_66c498cf.png";
 import manualTherapyImage from "@assets/generated_images/Manual_therapy_service_image_90be64cf.png";
 import orthoRehabImage from "@assets/generated_images/Orthopedic_rehabilitation_service_image_60ec52b1.png";
@@ -58,6 +59,11 @@ export default function Home() {
 
   return (
     <div>
+      <SEO
+        title="Ana Sayfa"
+        description="İnsan Fizik Tedavi ve Rehabilitasyon Merkezi - Büyükçekmece'de uzman kadromuzla fizik tedavi, manuel terapi, bel-boyun fıtığı, skolyoz ve ortopedik rehabilitasyon hizmetleri sunuyoruz."
+        path="/"
+      />
       <section className="relative min-h-[600px] lg:min-h-[700px] flex items-center">
         <div
           className="absolute inset-0 bg-cover bg-center"

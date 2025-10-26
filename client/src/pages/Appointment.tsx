@@ -12,6 +12,7 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { SEO } from "@/components/SEO";
 
 export default function Appointment() {
   const { toast } = useToast();
@@ -73,6 +74,11 @@ export default function Appointment() {
   if (isSuccess) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center py-16 lg:py-24 bg-muted">
+        <SEO
+          title="Randevu Başarılı"
+          description="Randevu talebiniz başarıyla alındı. En kısa sürede sizinle iletişime geçeceğiz."
+          path="/randevu"
+        />
         <div className="container mx-auto px-4 lg:px-8">
           <Card className="max-w-2xl mx-auto text-center" data-testid="card-success">
             <CardContent className="pt-12 pb-12">
@@ -112,6 +118,11 @@ export default function Appointment() {
 
   return (
     <div>
+      <SEO
+        title="Randevu Al"
+        description="Online randevu sistemi ile fizik tedavi randevunuzu hemen oluşturun. Hizmet seçimi yapın, tarih ve saat belirleyin."
+        path="/randevu"
+      />
       <section className="py-16 lg:py-24 bg-muted">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="text-center mb-12">

@@ -2,11 +2,17 @@ import { Target, Eye, Award, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
+import { SEO } from "@/components/SEO";
 import heroImage from "@assets/generated_images/Hero_physiotherapy_session_image_66c498cf.png";
 
 export default function About() {
   return (
     <div>
+      <SEO
+        title="Hakkımızda"
+        description="İnsan Fizik Tedavi ve Rehabilitasyon Merkezi'nin misyonu, vizyonu, değerleri ve tedavi yaklaşımı. 15 yıllık deneyim ve binlerce mutlu hasta."
+        path="/hakkimizda"
+      />
       <section className="py-16 lg:py-24 bg-muted">
         <div className="container mx-auto px-4 lg:px-8">
           <div className="max-w-4xl mx-auto text-center mb-12">
