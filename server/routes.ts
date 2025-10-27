@@ -1,8 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertAppointmentSchema, insertContactMessageSchema, insertBlogPostSchema, insertTestimonialSchema, insertPatientSchema, users } from "@shared/schema";
+import { insertAppointmentSchema, insertContactMessageSchema, insertBlogPostSchema, insertTestimonialSchema, insertPatientSchema, insertTherapistSchema, users } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
+import { z } from "zod";
 import passport from "passport";
 import { requireAuth } from "./auth";
 import { db } from "./db";
@@ -382,6 +383,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.send("\uFEFF" + csvRows.join("\n"));
     } catch (error) {
       res.status(500).json({ error: "Failed to export patients" });
+    }
+  });
+
+  // ==================== Therapist Routes ====================
+  
+  app.post("/api/therapists", requireAuth, async (req, res) => {
+    try {
+      const data = insertTherapistSchema.parse(req.body);
+      const therapist = await storage.createTherapist(data);
+      res.status(201).json(therapist);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).message });
+      } else {
+        res.status(500).json({ error: "Failed to create therapist" });
+      }
+    }
+  });
+
+  app.get("/api/therapists", requireAuth, async (req, res) => {
+    try {
+      const therapists = await storage.getAllTherapists();
+      res.json(therapists);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch therapists" });
+    }
+  });
+
+  app.get("/api/therapists/:id", requireAuth, async (req, res) => {
+    try {
+      const therapist = await storage.getTherapist(req.params.id);
+      if (!therapist) {
+        res.status(404).json({ error: "Therapist not found" });
+        return;
+      }
+      res.json(therapist);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch therapist" });
+    }
+  });
+
+  app.patch("/api/therapists/:id", requireAuth, async (req, res) => {
+    try {
+      const data = insertTherapistSchema.partial().parse(req.body);
+      const therapist = await storage.updateTherapist(req.params.id, data);
+      if (!therapist) {
+        res.status(404).json({ error: "Therapist not found" });
+        return;
+      }
+      res.json(therapist);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).message });
+      } else {
+        res.status(500).json({ error: "Failed to update therapist" });
+      }
+    }
+  });
+
+  app.delete("/api/therapists/:id", requireAuth, async (req, res) => {
+    try {
+      await storage.deleteTherapist(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete therapist" });
     }
   });
 

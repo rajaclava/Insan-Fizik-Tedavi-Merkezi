@@ -19,6 +19,7 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import AdminBlogManager from "@/pages/AdminBlogManager";
 import AdminTestimonialsManager from "@/pages/AdminTestimonialsManager";
 import AdminPatients from "@/pages/AdminPatients";
+import AdminTherapists from "@/pages/AdminTherapists";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -36,6 +37,7 @@ function Router() {
       <Route path="/admin/blog" component={AdminBlogManager} />
       <Route path="/admin/testimonials" component={AdminTestimonialsManager} />
       <Route path="/admin/patients" component={AdminPatients} />
+      <Route path="/admin/therapists" component={AdminTherapists} />
       <Route component={NotFound} />
     </Switch>
   );
