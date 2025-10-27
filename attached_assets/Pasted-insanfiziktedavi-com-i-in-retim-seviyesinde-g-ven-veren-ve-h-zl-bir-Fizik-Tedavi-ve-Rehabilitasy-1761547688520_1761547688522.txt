@@ -1,0 +1,181 @@
+insanfiziktedavi.com için üretim seviyesinde, güven veren ve hızlı bir "Fizik Tedavi ve Rehabilitasyon" web uygulaması geliştir.
+
+## TEKNOLOJİ YIĞINI
+- Next.js 14 (App Router) + React 18 + TypeScript
+- Tailwind CSS (temiz, kurumsal sağlık teması)
+- Prisma ORM + PostgreSQL
+- Auth: NextAuth (Email/OTP + SMS/WhatsApp OTP opsiyonu) + JWT
+- API: /api altında REST benzeri route handlers (CRUD)
+- Depolama: yerel /public + adaptörle S3 uyumlu ( kolay switch )
+- Ödeme: PayTR (hazır server-side checkout entegrasyonu için mock endpoint ve .env anahtarları)
+- Bildirim: E-posta (SMTP), WhatsApp deep link (wa.me), SMS (ör. Twilio stub)
+- Loglama: server & audit logs (Prisma middlewares + simple logger)
+- i18n hazır altyapı (tr varsayılan, en kolay eklenebilir)
+
+## GÖRSEL VE MARKA
+- Marka adı: İnsan Fizik Tedavi ve Rehabilitasyon Merkezi
+- Renkler: açık mavi #3cb3d9, beyaz #ffffff, koyu lacivert #0e2240
+- Yazı tipi: Poppins veya Open Sans (Google Fonts)
+- Güven veren, sade sağlık arayüzü; erişilebilirlik (WCAG AA)
+
+## ROLLER VE YETKİLER
+- ADMIN: her şeye tam yetki
+- STAFF (sekreter): randevu, hasta, ödeme/paket yönetimi; site içeriklerinde sınırlı
+- PHYSIO (fizyoterapist): kendi hastaları, seans notları, egzersiz atamaları
+- PATIENT (hasta): kendi profil, randevu, paket, egzersiz, mesaj/geri bildirim
+
+## VERİ MODELİ (Prisma)
+- User(id, role, name, email, phone, password_hash?, otp_secret?, isVerified, createdAt, updatedAt)
+- Patient(id, userId?, fullName, birthDate?, gender?, phone, email?, address?, notes?, createdAt, updatedAt)
+- Therapist(id, userId, title, expertise[], bio?, workHoursJSON, createdAt, updatedAt)
+- Appointment(id, patientId, therapistId, date, startTime, endTime, status["PENDING","CONFIRMED","COMPLETED","CANCELLED","NO_SHOW"], channel["Clinic","Online"], createdAt, updatedAt)
+- TreatmentPlan(id, patientId, therapistId, name, totalSessions, completedSessions, description?, createdAt, updatedAt)
+- SessionNote(id, appointmentId, therapistId, painScale?, romJSON?, noteText, attachments[], createdAt)
+- Package(id, name, sessionCount, price, description?, isActive, createdAt, updatedAt)
+- Purchase(id, patientId, packageId, status["PENDING","PAID","REFUND"], paymentRef?, invoiceNumber?, createdAt, updatedAt)
+- Exercise(id, slug, title, videoUrl?, stepsMarkdown, tags[], createdAt, updatedAt)
+- AssignedExercise(id, patientId, exerciseId, frequencyPerWeek, startDate, endDate?, progressJSON)
+- Message(id, fromUserId, toUserId, body, readAt?, createdAt)
+- Feedback(id, patientId, rating(1-5), comment?, createdAt)
+- Page(id, slug, title, contentHTML, excerpt?, coverImage?, status["DRAFT","PUBLISHED","SCHEDULED"], scheduledAt?, seoTitle?, seoDescription?, ogImage?, createdAt, updatedAt, authorId)
+- Media(id, url, alt?, mime, size, uploadedById, createdAt)
+- SiteSetting(id, key, valueJSON)  // telefon, adres, whatsapp numarası, sosyal linkler vb.
+- AuditLog(id, userId?, action, entity, entityId?, metaJSON, createdAt)
+
+Gerekli index’leri ekle (örn. Appointment üzerinde date/startTime, Page.slug unique).
+
+## KİMLİK DOĞRULAMA ve DOĞRULAMA KODLARI
+- E-posta ile oturum aç: magic link veya 6 haneli OTP (5 dk geçerli, rate limit)
+- Telefon OTP (stub servis; arayüz hazır, provider .env ile kolay bağlanır)
+- İki adımlı doğrulama opsiyonu (e-posta + telefon)
+- Anti-brute force: IP bazlı throttle (örn. 5/10dk)
+- "isVerified" bayrağı: ilk girişte e-posta OTP doğrulaması zorunlu
+- Şifre opsiyonunu esnek bırak (hem OTP hem şifre destekle)
+
+## ADMIN PANELİ ("/admin" altında, protected)
+### 1) Hasta Yönetimi
+- Liste + arama + filtre (isim/telefon)
+- Detay kartı: profil bilgileri, geçmiş randevular, planlar, ödemeler, dosyalar
+- Dosya yükleme: epikriz/rapor/röntgen (Media tablosuna)
+- Notlar (private) + zaman damgası
+- CSV içe/dışa aktar (Hasta ve Randevu)
+
+### 2) Randevu Yönetimi
+- Takvim: günlük/haftalık görünüm, sürükle-bırak yeniden saatleme
+- Randevu oluştur/düzenle/iptal; durum yönetimi
+- Terapiste/kliniğe göre filtre
+- Otomatik hatırlatıcı: 
+  - E-posta + WhatsApp deep link (örn: wa.me/90XXXXXXXXXX?text=“Randevunuz yarın 14:00”)
+  - Hatırlatma zamanları: 24s, 3s önce (SiteSetting ile yönet)
+
+### 3) Fizyoterapist Yönetimi
+- Profil, uzmanlık etiketleri, çalışma saatleri
+- “Atanan hastalar” ve “Günlük özet”
+- Seans notları hızlı giriş
+
+### 4) Paket/Ödeme Yönetimi
+- Paket CRUD (seans sayısı, fiyat, açıklama, aktif/pasif)
+- Satın alma listesi, durum değişimi (PENDING/PAID/REFUND)
+- Fatura no üretimi (INV-YYYY-XXXX)
+- PayTR entegrasyonu için server route: /api/payments/paytr-init (mock) ve callback
+- PDF makbuz/ fatura çıktısı (basit html-to-pdf)
+
+### 5) İçerik / Site Yönetimi (CMS)
+- **Sayfa CRUD**: başlık, slug (unique), içerik (rich text/blocks), kapak görseli
+- **Durumlar**: DRAFT / PUBLISHED / SCHEDULED (zamanlayarak yayınla)
+- **SEO**: seoTitle, seoDescription, ogImage. Otomatik meta injection.
+- **Silme**: yumuşak sil (soft delete yerine status: DRAFT + “archived” flag da eklenebilir)
+- **Blog** (Page ile aynı model veya ayrı “Post” modeli opsiyonu; şimdilik Page yeterli)
+- **Medya Kütüphanesi**: upload/rename/alt text düzenle
+- **Site Ayarları**: telefon, WhatsApp numarası, adres, harita iframe, sosyal linkler, çalışma saatleri, e-posta ayarları, logo
+- **Rol bazlı yayın**: sadece ADMIN yayınlayabilsin (STAFF taslak kaydedebilir)
+- **Onay akışı (opsiyonel)**: taslaktan “Onaya gönder”, admin “Yayınla”
+
+### 6) Raporlama & Loglar
+- Günlük/haftalık randevu sayısı, doluluk
+- En çok uygulanan tedavi
+- Paket satışları ve ciro
+- AuditLog listesi: kim neyi ne zaman yaptı
+
+## HASTA PANELİ ("/panel", protected: PATIENT)
+- Profil: bilgiler, iletişim tercihi (mail/sms/whatsapp)
+- Tedavi planı: toplam/kalan seanslar
+- Randevu: uygun saatleri gör, oluştur/ertele/iptal (iptal politikası metni göster)
+- Satın alınan paketler + ödeme geçmişi; “Seans planla” kısayolu
+- Egzersizler: fizyoterapistin atadığı videolar + günlük tamamla butonu + ilerleme yüzdesi
+- Mesaj kutusu: fizyoterapist ile güvenli mesajlaşma
+- Geri bildirim: 1-5 puan + yorum (tamamlanan seans sonrasında tetiklenir)
+
+## GENEL KULLANICI ARAYÜZÜ (Public)
+- Ana Sayfa (hero + CTA: “📞 Hemen Ara”, “💬 WhatsApp”), 3-4 hizmet kartı, hasta yorumları, konum/harita
+- Hakkımızda (misyon/vizyon/ekip)
+- Hizmetler (Fizik Tedavi, Manuel Terapi, Ortopedik Rehabilitasyon, Skolyoz, Bel/Boyun Fıtığı, Nörolojik Rehabilitasyon; her biri 150-200 kelime açıklamalı, WhatsApp CTA)
+- Uzman Kadro (terapist kartları)
+- Blog (Page üzerinden filtre “category:blog” ile göster)
+- İletişim (telefon, WhatsApp, adres, Google Maps iframe, form)
+- Sabit WhatsApp butonu (sağ altta)
+- SEO: Title/H1 hiyerarşisi, schema.org HealthcareOrganization + Article
+
+## API YÜZEYİ (örnekler)
+- POST /api/auth/otp/request {email|phone} → 200 (rate limit)
+- POST /api/auth/otp/verify {email|phone, code} → JWT session
+- GET /api/patients?search=
+- POST /api/patients  (ADMIN/STAFF)
+- GET /api/appointments?therapistId=&date=
+- POST /api/appointments (rol bazlı)
+- PATCH /api/appointments/:id/status
+- POST /api/treatment-plans
+- POST /api/session-notes
+- POST /api/packages
+- POST /api/purchases (init PayTR) → payUrl veya iframe token
+- POST /api/payments/paytr-callback  (signature verify, status update)
+- CMS:
+  - GET /api/pages?status=&q=
+  - POST /api/pages  (slug unique; status DRAFT)
+  - PATCH /api/pages/:id (publish/schedule)
+  - DELETE /api/pages/:id  (soft delete veya archive)
+  - POST /api/media (upload)
+  - GET /api/settings / POST /api/settings
+
+Tüm korumalı endpoint’lerde rol kontrolü ve audit log tetikleyicisi kullan.
+
+## GÜVENLİK & PERFORMANS
+- Rate limit: auth ve public form endpoint’leri (IP başına)
+- CSRF koruması (NextAuth + verifiable requests)
+- Input validation: zod/yup
+- Dosya yüklemede mime/size kontrolü; zararlı içerik filtreleri
+- .env örneği: DATABASE_URL, NEXTAUTH_SECRET, SMTP_HOST/USER/PASS, PAYTR_MERCHANT_ID/KEY/SALT, SMS_PROVIDER_KEY, BASE_URL
+- ISR/SSG + dinamik sayfalar için cache headers; görsel optimizasyon
+
+## GÖREVLER & HATIRLATICILAR
+- Cron/route handler (edge-friendly) ile günlük iş:
+  - Yarın randevusu olanlara e-posta + WhatsApp hatırlatma linki
+  - SCHEDULED sayfaları zamanı gelince PUBLISHED yap
+- Failed job logla; retry politikası
+
+## ÖN YÜZ BİLEŞENLERİ
+- Admin Layout: sidebar (Randevular, Hastalar, Terapistler, Paketler, İçerik, Medya, Ayarlar, Raporlar)
+- Takvim: drag&drop (örn. react-big-calendar muadili) – uygun kütüphane
+- Rich Text Editor: tiptap/plate (temiz HTML üret)
+- Tablo/Filtre/Arama: hızlı ve erişilebilir
+- Toast/Banner uyarılar (başarılı/başarısız işlemler)
+- Formlar: açıklamalı placeholder, zorunlu alan işaretleri
+
+## DEMO VERİ & TOHUMLAMA
+- 2 terapist, 6 örnek hasta, 8 örnek sayfa (Ana sayfa, Hakkımızda, 5 hizmet, Blog ana)
+- 4 örnek blog yazısı (SEO uyumlu başlık/açıklama)
+- 3 paket (5/10/20 seans)
+- 6 egzersiz (video veya placeholder link)
+
+## TESLİMAT
+- Çalışır Next.js projesi, `npm run dev` ile ayaklanır
+- README: kurulum, .env örneği, migrate, seed, PayTR test akışı
+- Kod temizliği: ESLint + Prettier
+- Açık ve yorumlu dosya yapısı
+- Tüm kritik akışlar için örnek test (basic)
+
+Uygulamayı kur, minimum uçtan uca demo akışlarını çalışır teslim et:
+- Admin giriş → sayfa oluştur (DRAFT→PUBLISH) → ana sitede görünür
+- Hasta oluştur → randevu ata → hatırlatma job’u çalıştır
+- Paket oluştur → satın alma başlat (mock PayTR) → PAID → seans planla
+- Fizyoterapist → seans notu gir → hasta panelinde görüntülensin
