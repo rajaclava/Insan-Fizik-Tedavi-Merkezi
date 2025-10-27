@@ -24,6 +24,7 @@ import AdminPackages from "@/pages/AdminPackages";
 import AdminPurchases from "@/pages/AdminPurchases";
 import AdminTreatmentPlans from "@/pages/AdminTreatmentPlans";
 import AdminSessionNotes from "@/pages/AdminSessionNotes";
+import LoginSelect from "@/pages/LoginSelect";
 import PatientLogin from "@/pages/PatientLogin";
 import PatientDashboard from "@/pages/PatientDashboard";
 import TherapistLogin from "@/pages/TherapistLogin";
@@ -40,6 +41,7 @@ function Router() {
       <Route path="/blog" component={Blog} />
       <Route path="/iletisim" component={Contact} />
       <Route path="/randevu" component={Appointment} />
+      <Route path="/login" component={LoginSelect} />
       <Route path="/patient/login" component={PatientLogin} />
       <Route path="/patient/dashboard" component={PatientDashboard} />
       <Route path="/therapist/login" component={TherapistLogin} />

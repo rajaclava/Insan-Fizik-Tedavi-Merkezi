@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Phone, Menu, X } from "lucide-react";
+import { Phone, Menu, X, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import logoImage from "@assets/cropped-INSAN-FIZIK-TEDAVI-son-logo_1761513912032.png";
@@ -40,6 +40,12 @@ export function Header() {
           </nav>
 
           <div className="hidden lg:flex items-center gap-3">
+            <Button variant="ghost" size="default" asChild data-testid="button-login">
+              <Link href="/login">
+                <LogIn className="h-4 w-4 mr-2" />
+                Giriş Yap
+              </Link>
+            </Button>
             <Button variant="outline" size="default" asChild data-testid="button-call">
               <a href="tel:+905326127244">
                 <Phone className="h-4 w-4 mr-2" />
@@ -80,6 +86,12 @@ export function Header() {
                 </Link>
               ))}
               <div className="flex flex-col gap-2 pt-2">
+                <Button variant="ghost" size="default" asChild data-testid="mobile-button-login">
+                  <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Giriş Yap
+                  </Link>
+                </Button>
                 <Button variant="outline" size="default" asChild data-testid="mobile-button-call">
                   <a href="tel:+905326127244">
                     <Phone className="h-4 w-4 mr-2" />
