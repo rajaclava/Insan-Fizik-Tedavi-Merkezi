@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertAppointmentSchema, insertContactMessageSchema, insertBlogPostSchema, insertTestimonialSchema, insertPatientSchema, insertTherapistSchema, users } from "@shared/schema";
+import { insertAppointmentSchema, insertContactMessageSchema, insertBlogPostSchema, insertTestimonialSchema, insertPatientSchema, insertTherapistSchema, insertPackageSchema, insertPurchaseSchema, users } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { z } from "zod";
 import passport from "passport";
@@ -448,6 +448,165 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete therapist" });
+    }
+  });
+
+  // ==================== Package Routes ====================
+
+  app.post("/api/packages", requireAuth, async (req, res) => {
+    try {
+      const data = insertPackageSchema.parse(req.body);
+      const pkg = await storage.createPackage(data);
+      res.status(201).json(pkg);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).message });
+      } else {
+        res.status(500).json({ error: "Failed to create package" });
+      }
+    }
+  });
+
+  app.get("/api/packages", async (req, res) => {
+    try {
+      const packages = await storage.getAllPackages();
+      res.json(packages);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch packages" });
+    }
+  });
+
+  app.get("/api/packages/active", async (req, res) => {
+    try {
+      const packages = await storage.getActivePackages();
+      res.json(packages);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch active packages" });
+    }
+  });
+
+  app.get("/api/packages/:id", async (req, res) => {
+    try {
+      const pkg = await storage.getPackage(req.params.id);
+      if (!pkg) {
+        res.status(404).json({ error: "Package not found" });
+        return;
+      }
+      res.json(pkg);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch package" });
+    }
+  });
+
+  app.patch("/api/packages/:id", requireAuth, async (req, res) => {
+    try {
+      const data = insertPackageSchema.partial().parse(req.body);
+      const pkg = await storage.updatePackage(req.params.id, data);
+      if (!pkg) {
+        res.status(404).json({ error: "Package not found" });
+        return;
+      }
+      res.json(pkg);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).message });
+      } else {
+        res.status(500).json({ error: "Failed to update package" });
+      }
+    }
+  });
+
+  app.delete("/api/packages/:id", requireAuth, async (req, res) => {
+    try {
+      await storage.deletePackage(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete package" });
+    }
+  });
+
+  // ==================== Purchase Routes ====================
+
+  app.post("/api/purchases", requireAuth, async (req, res) => {
+    try {
+      const data = insertPurchaseSchema.parse(req.body);
+      
+      // Generate invoice number
+      const now = new Date();
+      const year = now.getFullYear();
+      const randomPart = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      const invoiceNumber = `INV-${year}-${randomPart}`;
+      
+      const purchase = await storage.createPurchase({
+        ...data,
+        invoiceNumber,
+      });
+      
+      res.status(201).json(purchase);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).message });
+      } else {
+        res.status(500).json({ error: "Failed to create purchase" });
+      }
+    }
+  });
+
+  app.get("/api/purchases", requireAuth, async (req, res) => {
+    try {
+      const purchases = await storage.getAllPurchases();
+      res.json(purchases);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch purchases" });
+    }
+  });
+
+  app.get("/api/purchases/patient/:patientId", requireAuth, async (req, res) => {
+    try {
+      const purchases = await storage.getPurchasesByPatient(req.params.patientId);
+      res.json(purchases);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch patient purchases" });
+    }
+  });
+
+  app.get("/api/purchases/:id", requireAuth, async (req, res) => {
+    try {
+      const purchase = await storage.getPurchase(req.params.id);
+      if (!purchase) {
+        res.status(404).json({ error: "Purchase not found" });
+        return;
+      }
+      res.json(purchase);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch purchase" });
+    }
+  });
+
+  app.patch("/api/purchases/:id", requireAuth, async (req, res) => {
+    try {
+      const data = insertPurchaseSchema.partial().parse(req.body);
+      const purchase = await storage.updatePurchase(req.params.id, data);
+      if (!purchase) {
+        res.status(404).json({ error: "Purchase not found" });
+        return;
+      }
+      res.json(purchase);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).message });
+      } else {
+        res.status(500).json({ error: "Failed to update purchase" });
+      }
+    }
+  });
+
+  app.delete("/api/purchases/:id", requireAuth, async (req, res) => {
+    try {
+      await storage.deletePurchase(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete purchase" });
     }
   });
 
