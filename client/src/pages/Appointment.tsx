@@ -41,7 +41,7 @@ export default function Appointment() {
       email: "",
       service: "",
       date: "",
-      time: "",
+      startTime: "",
       message: "",
     },
   });
@@ -317,7 +317,7 @@ export default function Appointment() {
 
                         <FormField
                           control={form.control}
-                          name="time"
+                          name="startTime"
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>

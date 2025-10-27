@@ -321,7 +321,7 @@ export default function AdminDashboard() {
                           </div>
                           <div className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
-                            {appointment.time}
+                            {appointment.startTime}
                           </div>
                         </div>
                         <p className="text-sm">
@@ -478,7 +478,7 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <label className="text-sm font-medium">Saat</label>
-                  <p className="text-sm text-muted-foreground">{selectedAppointment.time}</p>
+                  <p className="text-sm text-muted-foreground">{selectedAppointment.startTime}</p>
                 </div>
               </div>
               {selectedAppointment.message && (
