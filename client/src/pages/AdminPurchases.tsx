@@ -10,10 +10,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, ShoppingCart } from "lucide-react";
+import { z } from "zod";
+
+// Form schema that accepts TL as number (will convert to kuruş on submit)
+const purchaseFormSchema = insertPurchaseSchema.extend({
+  amount: z.number().min(0, "Tutar 0'dan büyük olmalıdır"),
+});
 
 export default function AdminPurchases() {
   const { toast } = useToast();
@@ -75,8 +81,8 @@ export default function AdminPurchases() {
     },
   });
 
-  const createForm = useForm<InsertPurchase>({
-    resolver: zodResolver(insertPurchaseSchema),
+  const createForm = useForm<z.infer<typeof purchaseFormSchema>>({
+    resolver: zodResolver(purchaseFormSchema),
     defaultValues: {
       patientId: "",
       packageId: "",
@@ -86,8 +92,8 @@ export default function AdminPurchases() {
     },
   });
 
-  const editForm = useForm<InsertPurchase>({
-    resolver: zodResolver(insertPurchaseSchema),
+  const editForm = useForm<z.infer<typeof purchaseFormSchema>>({
+    resolver: zodResolver(purchaseFormSchema),
     defaultValues: {
       patientId: "",
       packageId: "",

@@ -188,7 +188,7 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
               <h1 className="text-2xl font-semibold text-foreground">Yönetim Paneli</h1>
-              <p className="text-sm text-muted-foreground">Hoş geldiniz, {user.username}</p>
+              <p className="text-sm text-muted-foreground">Hoş geldiniz, Admin</p>
             </div>
             <div className="flex gap-2 flex-wrap">
               <Link href="/admin/patients">

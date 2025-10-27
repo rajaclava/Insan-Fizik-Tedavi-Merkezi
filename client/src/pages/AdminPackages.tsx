@@ -14,6 +14,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Plus, Edit, Trash2, Package as PackageIcon } from "lucide-react";
+import { z } from "zod";
+
+// Form schema that accepts TL as number (will convert to kuruş on submit)
+const packageFormSchema = insertPackageSchema.extend({
+  price: z.number().min(0, "Fiyat 0'dan büyük olmalıdır"),
+});
 
 export default function AdminPackages() {
   const { toast } = useToast();
@@ -67,8 +73,8 @@ export default function AdminPackages() {
     },
   });
 
-  const createForm = useForm<InsertPackage>({
-    resolver: zodResolver(insertPackageSchema),
+  const createForm = useForm<z.infer<typeof packageFormSchema>>({
+    resolver: zodResolver(packageFormSchema),
     defaultValues: {
       name: "",
       sessionCount: 1,
@@ -78,8 +84,8 @@ export default function AdminPackages() {
     },
   });
 
-  const editForm = useForm<InsertPackage>({
-    resolver: zodResolver(insertPackageSchema),
+  const editForm = useForm<z.infer<typeof packageFormSchema>>({
+    resolver: zodResolver(packageFormSchema),
     defaultValues: {
       name: "",
       sessionCount: 1,
