@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertAppointmentSchema, insertContactMessageSchema, insertBlogPostSchema, insertTestimonialSchema, users } from "@shared/schema";
+import { insertAppointmentSchema, insertContactMessageSchema, insertBlogPostSchema, insertTestimonialSchema, insertPatientSchema, users } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import passport from "passport";
 import { requireAuth } from "./auth";
@@ -283,6 +283,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Testimonial deleted" });
     } catch (error) {
       res.status(500).json({ error: "Failed to delete testimonial" });
+    }
+  });
+
+  // Patient routes
+  app.get("/api/patients", requireAuth, async (req, res) => {
+    try {
+      const patients = await storage.getAllPatients();
+      res.json(patients);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch patients" });
+    }
+  });
+
+  app.get("/api/patients/:id", requireAuth, async (req, res) => {
+    try {
+      const patient = await storage.getPatient(req.params.id);
+      if (!patient) {
+        return res.status(404).json({ error: "Patient not found" });
+      }
+      res.json(patient);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch patient" });
+    }
+  });
+
+  app.post("/api/patients", requireAuth, async (req, res) => {
+    try {
+      const validatedData = insertPatientSchema.parse(req.body);
+      const patient = await storage.createPatient(validatedData);
+      res.status(201).json(patient);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ error: validationError.message });
+      } else {
+        res.status(500).json({ error: "Failed to create patient" });
+      }
+    }
+  });
+
+  app.patch("/api/patients/:id", requireAuth, async (req, res) => {
+    try {
+      const validatedData = insertPatientSchema.partial().parse(req.body);
+      const patient = await storage.updatePatient(req.params.id, validatedData);
+      if (!patient) {
+        return res.status(404).json({ error: "Patient not found" });
+      }
+      res.json(patient);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ error: validationError.message });
+      } else {
+        res.status(500).json({ error: "Failed to update patient" });
+      }
+    }
+  });
+
+  app.delete("/api/patients/:id", requireAuth, async (req, res) => {
+    try {
+      await storage.deletePatient(req.params.id);
+      res.json({ message: "Patient deleted" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete patient" });
+    }
+  });
+
+  app.get("/api/patients/export/csv", requireAuth, async (req, res) => {
+    try {
+      const patients = await storage.getAllPatients();
+      
+      const escapeCsvField = (field: string | null | undefined): string => {
+        if (!field) return '""';
+        const value = String(field);
+        const escaped = value.replace(/"/g, '""');
+        return `"${escaped}"`;
+      };
+      
+      const headers = ["ID", "Ad Soyad", "Telefon", "E-posta", "Doğum Tarihi", "Cinsiyet", "Adres", "Notlar", "Kayıt Tarihi"];
+      const csvRows = [
+        headers.map(h => escapeCsvField(h)).join(","),
+        ...patients.map(p => [
+          escapeCsvField(p.id),
+          escapeCsvField(p.fullName),
+          escapeCsvField(p.phone),
+          escapeCsvField(p.email),
+          escapeCsvField(p.birthDate),
+          escapeCsvField(p.gender),
+          escapeCsvField(p.address),
+          escapeCsvField(p.notes),
+          escapeCsvField(p.createdAt ? new Date(p.createdAt).toLocaleDateString("tr-TR") : "")
+        ].join(","))
+      ];
+      
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", 'attachment; filename="hastalar.csv"');
+      res.send("\uFEFF" + csvRows.join("\n"));
+    } catch (error) {
+      res.status(500).json({ error: "Failed to export patients" });
     }
   });
 
