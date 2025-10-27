@@ -363,6 +363,25 @@ export const insertMediaSchema = createInsertSchema(media).omit({
 export type InsertMedia = z.infer<typeof insertMediaSchema>;
 export type Media = typeof media.$inferSelect;
 
+// OTP Codes table
+export const otpCodes = pgTable("otp_codes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  phone: text("phone").notNull(),
+  code: text("code").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  attempts: integer("attempts").notNull().default(0),
+  verified: boolean("verified").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertOtpCodeSchema = createInsertSchema(otpCodes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertOtpCode = z.infer<typeof insertOtpCodeSchema>;
+export type OtpCode = typeof otpCodes.$inferSelect;
+
 // ==================== STATIC TYPES ====================
 
 // Services type (static data)

@@ -8,6 +8,7 @@ import passport from "passport";
 import { requireAuth } from "./auth";
 import { db } from "./db";
 import bcrypt from "bcrypt";
+import { sendOTP, verifyOTP } from "./otp";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
@@ -39,6 +40,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ user: req.user });
     } else {
       res.status(401).json({ message: "Giriş yapılmamış" });
+    }
+  });
+
+  // OTP routes for patient login
+  app.post("/api/auth/send-otp", async (req, res) => {
+    try {
+      const { phone } = req.body;
+      
+      if (!phone) {
+        return res.status(400).json({ error: "Telefon numarası gerekli" });
+      }
+
+      const result = await sendOTP(phone);
+      
+      if (result.success) {
+        res.json({ message: result.message });
+      } else {
+        res.status(400).json({ error: result.message });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Kod gönderilemedi" });
+    }
+  });
+
+  app.post("/api/auth/verify-otp", async (req, res) => {
+    try {
+      const { phone, code } = req.body;
+      
+      if (!phone || !code) {
+        return res.status(400).json({ error: "Telefon ve kod gerekli" });
+      }
+
+      const result = await verifyOTP(phone, code);
+      
+      if (result.success && result.userId) {
+        // Get user and log them in
+        const { eq } = await import("drizzle-orm");
+        const [user] = await db.select().from(users).where(eq(users.id, result.userId)).limit(1);
+        
+        if (user) {
+          req.logIn(user, (err) => {
+            if (err) {
+              return res.status(500).json({ error: "Giriş yapılamadı" });
+            }
+            const { password: _, ...userWithoutPassword } = user;
+            return res.json({ message: result.message, user: userWithoutPassword });
+          });
+        } else {
+          res.status(404).json({ error: "Kullanıcı bulunamadı" });
+        }
+      } else {
+        res.status(400).json({ error: result.message });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Doğrulama yapılamadı" });
     }
   });
 
