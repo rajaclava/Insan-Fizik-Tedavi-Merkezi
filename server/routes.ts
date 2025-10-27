@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertAppointmentSchema, insertContactMessageSchema, insertBlogPostSchema, insertTestimonialSchema, insertPatientSchema, insertTherapistSchema, insertPackageSchema, insertPurchaseSchema, users } from "@shared/schema";
+import { insertAppointmentSchema, insertContactMessageSchema, insertBlogPostSchema, insertTestimonialSchema, insertPatientSchema, insertTherapistSchema, insertPackageSchema, insertPurchaseSchema, insertTreatmentPlanSchema, insertSessionNoteSchema, users } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { z } from "zod";
 import passport from "passport";
@@ -607,6 +607,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete purchase" });
+    }
+  });
+
+  // ========== Treatment Plans ==========
+  app.post("/api/treatment-plans", requireAuth, async (req, res) => {
+    try {
+      const data = insertTreatmentPlanSchema.parse(req.body);
+      const plan = await storage.createTreatmentPlan(data);
+      res.json(plan);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).message });
+      } else {
+        res.status(500).json({ error: "Failed to create treatment plan" });
+      }
+    }
+  });
+
+  app.get("/api/treatment-plans", async (req, res) => {
+    try {
+      const { patientId } = req.query;
+      if (patientId && typeof patientId === "string") {
+        const plans = await storage.getTreatmentPlansByPatient(patientId);
+        res.json(plans);
+      } else {
+        const plans = await storage.getAllTreatmentPlans();
+        res.json(plans);
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch treatment plans" });
+    }
+  });
+
+  app.get("/api/treatment-plans/:id", async (req, res) => {
+    try {
+      const plan = await storage.getTreatmentPlan(req.params.id);
+      if (!plan) {
+        res.status(404).json({ error: "Treatment plan not found" });
+        return;
+      }
+      res.json(plan);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch treatment plan" });
+    }
+  });
+
+  app.patch("/api/treatment-plans/:id", requireAuth, async (req, res) => {
+    try {
+      const data = insertTreatmentPlanSchema.partial().parse(req.body);
+      const plan = await storage.updateTreatmentPlan(req.params.id, data);
+      if (!plan) {
+        res.status(404).json({ error: "Treatment plan not found" });
+        return;
+      }
+      res.json(plan);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).message });
+      } else {
+        res.status(500).json({ error: "Failed to update treatment plan" });
+      }
+    }
+  });
+
+  app.delete("/api/treatment-plans/:id", requireAuth, async (req, res) => {
+    try {
+      await storage.deleteTreatmentPlan(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete treatment plan" });
+    }
+  });
+
+  // ========== Session Notes ==========
+  app.post("/api/session-notes", requireAuth, async (req, res) => {
+    try {
+      const data = insertSessionNoteSchema.parse(req.body);
+      const note = await storage.createSessionNote(data);
+      res.json(note);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).message });
+      } else {
+        res.status(500).json({ error: "Failed to create session note" });
+      }
+    }
+  });
+
+  app.get("/api/session-notes", async (req, res) => {
+    try {
+      const { appointmentId } = req.query;
+      if (appointmentId && typeof appointmentId === "string") {
+        const notes = await storage.getSessionNotesByAppointment(appointmentId);
+        res.json(notes);
+      } else {
+        const notes = await storage.getAllSessionNotes();
+        res.json(notes);
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch session notes" });
+    }
+  });
+
+  app.get("/api/session-notes/:id", async (req, res) => {
+    try {
+      const note = await storage.getSessionNote(req.params.id);
+      if (!note) {
+        res.status(404).json({ error: "Session note not found" });
+        return;
+      }
+      res.json(note);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch session note" });
+    }
+  });
+
+  app.patch("/api/session-notes/:id", requireAuth, async (req, res) => {
+    try {
+      const data = insertSessionNoteSchema.partial().parse(req.body);
+      const note = await storage.updateSessionNote(req.params.id, data);
+      if (!note) {
+        res.status(404).json({ error: "Session note not found" });
+        return;
+      }
+      res.json(note);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: fromZodError(error).message });
+      } else {
+        res.status(500).json({ error: "Failed to update session note" });
+      }
+    }
+  });
+
+  app.delete("/api/session-notes/:id", requireAuth, async (req, res) => {
+    try {
+      await storage.deleteSessionNote(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete session note" });
     }
   });
 
