@@ -15,6 +15,10 @@ import {
   type InsertPackage,
   type Purchase,
   type InsertPurchase,
+  type TreatmentPlan,
+  type InsertTreatmentPlan,
+  type SessionNote,
+  type InsertSessionNote,
   appointments,
   contactMessages,
   blogPosts,
@@ -23,6 +27,8 @@ import {
   therapists,
   packages,
   purchases,
+  treatmentPlans,
+  sessionNotes,
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 import { db } from "./db";
@@ -85,6 +91,22 @@ export interface IStorage {
   getPurchase(id: string): Promise<Purchase | undefined>;
   updatePurchase(id: string, purchase: Partial<InsertPurchase>): Promise<Purchase | undefined>;
   deletePurchase(id: string): Promise<void>;
+
+  // ========== Treatment Plans ==========
+  createTreatmentPlan(plan: InsertTreatmentPlan): Promise<TreatmentPlan>;
+  getAllTreatmentPlans(): Promise<TreatmentPlan[]>;
+  getTreatmentPlansByPatient(patientId: string): Promise<TreatmentPlan[]>;
+  getTreatmentPlan(id: string): Promise<TreatmentPlan | undefined>;
+  updateTreatmentPlan(id: string, plan: Partial<InsertTreatmentPlan>): Promise<TreatmentPlan | undefined>;
+  deleteTreatmentPlan(id: string): Promise<void>;
+
+  // ========== Session Notes ==========
+  createSessionNote(note: InsertSessionNote): Promise<SessionNote>;
+  getAllSessionNotes(): Promise<SessionNote[]>;
+  getSessionNotesByAppointment(appointmentId: string): Promise<SessionNote[]>;
+  getSessionNote(id: string): Promise<SessionNote | undefined>;
+  updateSessionNote(id: string, note: Partial<InsertSessionNote>): Promise<SessionNote | undefined>;
+  deleteSessionNote(id: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -96,6 +118,8 @@ export class MemStorage implements IStorage {
   private therapists: Map<string, Therapist>;
   private packages: Map<string, Package>;
   private purchases: Map<string, Purchase>;
+  private treatmentPlans: Map<string, TreatmentPlan>;
+  private sessionNotes: Map<string, SessionNote>;
 
   constructor() {
     this.appointments = new Map();
@@ -106,6 +130,8 @@ export class MemStorage implements IStorage {
     this.therapists = new Map();
     this.packages = new Map();
     this.purchases = new Map();
+    this.treatmentPlans = new Map();
+    this.sessionNotes = new Map();
   }
 
   async createAppointment(insertAppointment: InsertAppointment): Promise<Appointment> {
@@ -321,6 +347,44 @@ export class MemStorage implements IStorage {
     return updated;
   }
   async deletePurchase(id: string): Promise<void> { this.purchases.delete(id); }
+
+  // ========== Treatment Plans ==========
+  async createTreatmentPlan(insertPlan: InsertTreatmentPlan): Promise<TreatmentPlan> {
+    const id = randomUUID();
+    const plan: TreatmentPlan = { ...insertPlan, id, completedSessions: insertPlan.completedSessions ?? 0, description: insertPlan.description ?? null, createdAt: new Date(), updatedAt: new Date() };
+    this.treatmentPlans.set(id, plan);
+    return plan;
+  }
+  async getAllTreatmentPlans(): Promise<TreatmentPlan[]> { return Array.from(this.treatmentPlans.values()); }
+  async getTreatmentPlansByPatient(patientId: string): Promise<TreatmentPlan[]> { return Array.from(this.treatmentPlans.values()).filter(p => p.patientId === patientId); }
+  async getTreatmentPlan(id: string): Promise<TreatmentPlan | undefined> { return this.treatmentPlans.get(id); }
+  async updateTreatmentPlan(id: string, updates: Partial<InsertTreatmentPlan>): Promise<TreatmentPlan | undefined> {
+    const plan = this.treatmentPlans.get(id);
+    if (!plan) return undefined;
+    const updated = { ...plan, ...updates, updatedAt: new Date() };
+    this.treatmentPlans.set(id, updated);
+    return updated;
+  }
+  async deleteTreatmentPlan(id: string): Promise<void> { this.treatmentPlans.delete(id); }
+
+  // ========== Session Notes ==========
+  async createSessionNote(insertNote: InsertSessionNote): Promise<SessionNote> {
+    const id = randomUUID();
+    const note: SessionNote = { ...insertNote, id, painScale: insertNote.painScale ?? null, rom: insertNote.rom ?? null, attachments: insertNote.attachments ?? [], createdAt: new Date() };
+    this.sessionNotes.set(id, note);
+    return note;
+  }
+  async getAllSessionNotes(): Promise<SessionNote[]> { return Array.from(this.sessionNotes.values()); }
+  async getSessionNotesByAppointment(appointmentId: string): Promise<SessionNote[]> { return Array.from(this.sessionNotes.values()).filter(n => n.appointmentId === appointmentId); }
+  async getSessionNote(id: string): Promise<SessionNote | undefined> { return this.sessionNotes.get(id); }
+  async updateSessionNote(id: string, updates: Partial<InsertSessionNote>): Promise<SessionNote | undefined> {
+    const note = this.sessionNotes.get(id);
+    if (!note) return undefined;
+    const updated = { ...note, ...updates };
+    this.sessionNotes.set(id, updated);
+    return updated;
+  }
+  async deleteSessionNote(id: string): Promise<void> { this.sessionNotes.delete(id); }
 }
 
 export class DatabaseStorage implements IStorage {
@@ -540,6 +604,70 @@ export class DatabaseStorage implements IStorage {
 
   async deletePurchase(id: string): Promise<void> {
     await db.delete(purchases).where(eq(purchases.id, id));
+  }
+
+  // ========== Treatment Plans ==========
+  async createTreatmentPlan(insertPlan: InsertTreatmentPlan): Promise<TreatmentPlan> {
+    const [plan] = await db.insert(treatmentPlans).values(insertPlan).returning();
+    return plan;
+  }
+
+  async getAllTreatmentPlans(): Promise<TreatmentPlan[]> {
+    return await db.select().from(treatmentPlans).orderBy(desc(treatmentPlans.createdAt));
+  }
+
+  async getTreatmentPlansByPatient(patientId: string): Promise<TreatmentPlan[]> {
+    return await db.select().from(treatmentPlans).where(eq(treatmentPlans.patientId, patientId)).orderBy(desc(treatmentPlans.createdAt));
+  }
+
+  async getTreatmentPlan(id: string): Promise<TreatmentPlan | undefined> {
+    const [plan] = await db.select().from(treatmentPlans).where(eq(treatmentPlans.id, id));
+    return plan;
+  }
+
+  async updateTreatmentPlan(id: string, updates: Partial<InsertTreatmentPlan>): Promise<TreatmentPlan | undefined> {
+    const [updated] = await db
+      .update(treatmentPlans)
+      .set(updates)
+      .where(eq(treatmentPlans.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteTreatmentPlan(id: string): Promise<void> {
+    await db.delete(treatmentPlans).where(eq(treatmentPlans.id, id));
+  }
+
+  // ========== Session Notes ==========
+  async createSessionNote(insertNote: InsertSessionNote): Promise<SessionNote> {
+    const [note] = await db.insert(sessionNotes).values(insertNote).returning();
+    return note;
+  }
+
+  async getAllSessionNotes(): Promise<SessionNote[]> {
+    return await db.select().from(sessionNotes).orderBy(desc(sessionNotes.createdAt));
+  }
+
+  async getSessionNotesByAppointment(appointmentId: string): Promise<SessionNote[]> {
+    return await db.select().from(sessionNotes).where(eq(sessionNotes.appointmentId, appointmentId)).orderBy(desc(sessionNotes.createdAt));
+  }
+
+  async getSessionNote(id: string): Promise<SessionNote | undefined> {
+    const [note] = await db.select().from(sessionNotes).where(eq(sessionNotes.id, id));
+    return note;
+  }
+
+  async updateSessionNote(id: string, updates: Partial<InsertSessionNote>): Promise<SessionNote | undefined> {
+    const [updated] = await db
+      .update(sessionNotes)
+      .set(updates)
+      .where(eq(sessionNotes.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteSessionNote(id: string): Promise<void> {
+    await db.delete(sessionNotes).where(eq(sessionNotes.id, id));
   }
 }
 
