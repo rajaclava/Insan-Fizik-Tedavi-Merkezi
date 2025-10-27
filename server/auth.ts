@@ -4,8 +4,10 @@ import type { Express } from "express";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import { db } from "./db";
-import { users, type User } from "@shared/schema";
+import { users } from "@shared/schema";
+import type { User as DbUser } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import bcrypt from "bcrypt";
 
 const MemoryStore = createMemoryStore(session);
 
@@ -23,7 +25,7 @@ const sessionSettings: session.SessionOptions = {
 
 declare global {
   namespace Express {
-    interface User extends Omit<User, "password"> {}
+    interface User extends Omit<DbUser, "password"> {}
   }
 }
 
@@ -45,8 +47,9 @@ export function setupAuth(app: Express) {
           return done(null, false, { message: "Kullanıcı adı veya şifre hatalı" });
         }
 
-        // Simple password comparison (in production, use bcrypt)
-        if (user.password !== password) {
+        // Compare password with bcrypt
+        const isValidPassword = await bcrypt.compare(password, user.password);
+        if (!isValidPassword) {
           return done(null, false, { message: "Kullanıcı adı veya şifre hatalı" });
         }
 
@@ -82,9 +85,41 @@ export function setupAuth(app: Express) {
   });
 }
 
+// Basic auth middleware
 export function requireAuth(req: any, res: any, next: any) {
   if (req.isAuthenticated()) {
     return next();
   }
   res.status(401).json({ message: "Giriş yapmanız gerekiyor" });
+}
+
+// Role-based auth middleware
+export function requireAdmin(req: any, res: any, next: any) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Giriş yapmanız gerekiyor" });
+  }
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Bu işlem için admin yetkisi gerekiyor" });
+  }
+  next();
+}
+
+export function requireTherapist(req: any, res: any, next: any) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Giriş yapmanız gerekiyor" });
+  }
+  if (req.user.role !== "admin" && req.user.role !== "therapist") {
+    return res.status(403).json({ message: "Bu işlem için terapist yetkisi gerekiyor" });
+  }
+  next();
+}
+
+export function requirePatient(req: any, res: any, next: any) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Giriş yapmanız gerekiyor" });
+  }
+  if (req.user.role !== "patient") {
+    return res.status(403).json({ message: "Bu işlem sadece hastalar için" });
+  }
+  next();
 }
