@@ -21,6 +21,10 @@ import {
   Eye,
   FileText,
   Star,
+  Users,
+  Stethoscope,
+  Package,
+  ShoppingCart,
 } from "lucide-react";
 import type { Appointment, ContactMessage } from "@shared/schema";
 import { SEO } from "@/components/SEO";
@@ -186,7 +190,31 @@ export default function AdminDashboard() {
               <h1 className="text-2xl font-semibold text-foreground">Yönetim Paneli</h1>
               <p className="text-sm text-muted-foreground">Hoş geldiniz, {user.username}</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
+              <Link href="/admin/patients">
+                <Button variant="outline" data-testid="link-patients">
+                  <Users className="w-4 h-4 mr-2" />
+                  Hastalar
+                </Button>
+              </Link>
+              <Link href="/admin/therapists">
+                <Button variant="outline" data-testid="link-therapists">
+                  <Stethoscope className="w-4 h-4 mr-2" />
+                  Fizyoterapistler
+                </Button>
+              </Link>
+              <Link href="/admin/packages">
+                <Button variant="outline" data-testid="link-packages">
+                  <Package className="w-4 h-4 mr-2" />
+                  Paketler
+                </Button>
+              </Link>
+              <Link href="/admin/purchases">
+                <Button variant="outline" data-testid="link-purchases">
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  Satın Almalar
+                </Button>
+              </Link>
               <Link href="/admin/blog">
                 <Button variant="outline" data-testid="link-blog-manager">
                   <FileText className="w-4 h-4 mr-2" />

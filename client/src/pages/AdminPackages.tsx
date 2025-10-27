@@ -92,6 +92,7 @@ export default function AdminPackages() {
   const handleCreateSubmit = (data: InsertPackage) => {
     const cleanedData = {
       ...data,
+      price: Math.round(data.price * 100), // Convert TL to kuruş
       description: data.description || undefined,
     };
     createMutation.mutate(cleanedData);
@@ -101,6 +102,7 @@ export default function AdminPackages() {
     if (selectedPackage) {
       const cleanedData = {
         ...data,
+        price: Math.round(data.price * 100), // Convert TL to kuruş
         description: data.description || undefined,
       };
       updateMutation.mutate({ id: selectedPackage.id, data: cleanedData });
@@ -112,7 +114,7 @@ export default function AdminPackages() {
     editForm.reset({
       name: pkg.name,
       sessionCount: pkg.sessionCount,
-      price: pkg.price,
+      price: pkg.price / 100, // Convert kuruş to TL for form display
       description: pkg.description || "",
       isActive: pkg.isActive,
     });
@@ -250,19 +252,15 @@ export default function AdminPackages() {
                       <FormLabel>Fiyat (TL) *</FormLabel>
                       <FormControl>
                         <Input
-                          {...field}
                           type="number"
                           min="0"
                           step="0.01"
-                          onChange={(e) => {
-                            const tl = parseFloat(e.target.value) || 0;
-                            field.onChange(Math.round(tl * 100));
-                          }}
-                          value={field.value / 100}
+                          value={field.value || ""}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                           data-testid="input-price"
                         />
                       </FormControl>
-                      <FormDescription>Kuruş olarak saklanır</FormDescription>
+                      <FormDescription>TL olarak girin, kuruş olarak saklanır</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -363,15 +361,11 @@ export default function AdminPackages() {
                       <FormLabel>Fiyat (TL) *</FormLabel>
                       <FormControl>
                         <Input
-                          {...field}
                           type="number"
                           min="0"
                           step="0.01"
-                          onChange={(e) => {
-                            const tl = parseFloat(e.target.value) || 0;
-                            field.onChange(Math.round(tl * 100));
-                          }}
-                          value={field.value / 100}
+                          value={field.value || ""}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                           data-testid="input-price-edit"
                         />
                       </FormControl>

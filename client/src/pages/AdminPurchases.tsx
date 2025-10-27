@@ -100,6 +100,7 @@ export default function AdminPurchases() {
   const handleCreateSubmit = (data: InsertPurchase) => {
     const cleanedData = {
       ...data,
+      amount: Math.round(data.amount * 100), // Convert TL to kuruş
       paymentRef: data.paymentRef || undefined,
     };
     createMutation.mutate(cleanedData);
@@ -109,6 +110,7 @@ export default function AdminPurchases() {
     if (selectedPurchase) {
       const cleanedData = {
         ...data,
+        amount: Math.round(data.amount * 100), // Convert TL to kuruş
         paymentRef: data.paymentRef || undefined,
       };
       updateMutation.mutate({ id: selectedPurchase.id, data: cleanedData });
@@ -120,7 +122,7 @@ export default function AdminPurchases() {
     editForm.reset({
       patientId: purchase.patientId,
       packageId: purchase.packageId,
-      amount: purchase.amount,
+      amount: purchase.amount / 100, // Convert kuruş to TL for form display
       status: purchase.status,
       paymentRef: purchase.paymentRef || "",
     });
@@ -149,7 +151,7 @@ export default function AdminPurchases() {
 
   const getPatientName = (patientId: string) => {
     const patient = patients.find((p) => p.id === patientId);
-    return patient ? `${patient.firstName} ${patient.lastName}` : "Bilinmiyor";
+    return patient ? patient.fullName : "Bilinmiyor";
   };
 
   const getPackageName = (packageId: string) => {
@@ -225,7 +227,7 @@ export default function AdminPurchases() {
                   </div>
                 )}
                 <div className="text-xs text-muted-foreground">
-                  {new Date(purchase.createdAt).toLocaleDateString("tr-TR")}
+                  {purchase.createdAt ? new Date(purchase.createdAt).toLocaleDateString("tr-TR") : "-"}
                 </div>
               </div>
             </CardContent>
@@ -255,7 +257,7 @@ export default function AdminPurchases() {
                       <SelectContent>
                         {patients.map((patient) => (
                           <SelectItem key={patient.id} value={patient.id}>
-                            {patient.firstName} {patient.lastName}
+                            {patient.fullName}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -275,7 +277,7 @@ export default function AdminPurchases() {
                         field.onChange(value);
                         const selectedPkg = packages.find((p) => p.id === value);
                         if (selectedPkg) {
-                          createForm.setValue("amount", selectedPkg.price);
+                          createForm.setValue("amount", selectedPkg.price / 100); // Convert kuruş to TL
                         }
                       }}
                       value={field.value}
@@ -305,18 +307,15 @@ export default function AdminPurchases() {
                     <FormLabel>Tutar (TL) *</FormLabel>
                     <FormControl>
                       <Input
-                        {...field}
                         type="number"
                         min="0"
                         step="0.01"
-                        onChange={(e) => {
-                          const tl = parseFloat(e.target.value) || 0;
-                          field.onChange(Math.round(tl * 100));
-                        }}
-                        value={field.value / 100}
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                         data-testid="input-amount"
                       />
                     </FormControl>
+                    <FormDescription>TL olarak girin, kuruş olarak saklanır</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
