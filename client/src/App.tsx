@@ -26,6 +26,8 @@ import AdminTreatmentPlans from "@/pages/AdminTreatmentPlans";
 import AdminSessionNotes from "@/pages/AdminSessionNotes";
 import PatientLogin from "@/pages/PatientLogin";
 import PatientDashboard from "@/pages/PatientDashboard";
+import TherapistLogin from "@/pages/TherapistLogin";
+import TherapistDashboard from "@/pages/TherapistDashboard";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -40,6 +42,8 @@ function Router() {
       <Route path="/randevu" component={Appointment} />
       <Route path="/patient/login" component={PatientLogin} />
       <Route path="/patient/dashboard" component={PatientDashboard} />
+      <Route path="/therapist/login" component={TherapistLogin} />
+      <Route path="/therapist/dashboard" component={TherapistDashboard} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/blog" component={AdminBlogManager} />
