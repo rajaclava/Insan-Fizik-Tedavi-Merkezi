@@ -24,6 +24,7 @@ import AdminPackages from "@/pages/AdminPackages";
 import AdminPurchases from "@/pages/AdminPurchases";
 import AdminTreatmentPlans from "@/pages/AdminTreatmentPlans";
 import AdminSessionNotes from "@/pages/AdminSessionNotes";
+import AdminUsers from "@/pages/AdminUsers";
 import LoginSelect from "@/pages/LoginSelect";
 import PatientLogin from "@/pages/PatientLogin";
 import PatientDashboard from "@/pages/PatientDashboard";
@@ -56,6 +57,7 @@ function Router() {
       <Route path="/admin/purchases" component={AdminPurchases} />
       <Route path="/admin/treatment-plans" component={AdminTreatmentPlans} />
       <Route path="/admin/session-notes" component={AdminSessionNotes} />
+      <Route path="/admin/users" component={AdminUsers} />
       <Route component={NotFound} />
     </Switch>
   );

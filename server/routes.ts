@@ -5,7 +5,7 @@ import { insertAppointmentSchema, insertContactMessageSchema, insertBlogPostSche
 import { fromZodError } from "zod-validation-error";
 import { z } from "zod";
 import passport from "passport";
-import { requireAuth } from "./auth";
+import { requireAuth, requireAdmin } from "./auth";
 import { db } from "./db";
 import bcrypt from "bcrypt";
 import { sendOTP, verifyOTP } from "./otp";
@@ -854,6 +854,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete session note" });
+    }
+  });
+
+  // ==================== Admin User Management Routes ====================
+  
+  // Get all users (admin only)
+  app.get("/api/admin/users", requireAdmin, async (req, res) => {
+    try {
+      const allUsers = await db.select({
+        id: users.id,
+        username: users.username,
+        email: users.email,
+        role: users.role,
+        isVerified: users.isVerified,
+        createdAt: users.createdAt,
+      }).from(users);
+      
+      res.json(allUsers);
+    } catch (error) {
+      res.status(500).json({ error: "Kullanıcılar listelenemedi" });
+    }
+  });
+
+  // Create admin or therapist user (admin only)
+  app.post("/api/admin/users", requireAdmin, async (req, res) => {
+    try {
+      const { username, email, password, role } = req.body;
+      
+      if (!username || !email || !password || !role) {
+        return res.status(400).json({ error: "Tüm alanları doldurun" });
+      }
+
+      if (!["admin", "therapist"].includes(role)) {
+        return res.status(400).json({ error: "Rol admin veya therapist olmalıdır" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const { or, eq } = await import("drizzle-orm");
+      
+      // Check if username or email already exists
+      const existingUser = await db.select().from(users).where(
+        or(
+          eq(users.username, username),
+          eq(users.email, email)
+        )
+      ).limit(1);
+
+      if (existingUser.length > 0) {
+        return res.status(400).json({ error: "Bu kullanıcı adı veya email zaten kullanılıyor" });
+      }
+
+      // Create user account
+      const [newUser] = await db.insert(users).values({
+        username,
+        email,
+        password: hashedPassword,
+        role,
+        isVerified: true,
+      }).returning();
+
+      const { password: _, ...userWithoutPassword } = newUser;
+      res.status(201).json(userWithoutPassword);
+    } catch (error: any) {
+      if (error.code === '23505') {
+        res.status(409).json({ error: "Bu kullanıcı adı veya email zaten kullanılıyor" });
+      } else {
+        res.status(500).json({ error: "Kullanıcı oluşturulamadı" });
+      }
+    }
+  });
+
+  // Delete user (admin only)
+  app.delete("/api/admin/users/:id", requireAdmin, async (req, res) => {
+    try {
+      const { eq } = await import("drizzle-orm");
+      
+      // Don't allow deleting yourself
+      if (req.user?.id === req.params.id) {
+        return res.status(400).json({ error: "Kendi hesabınızı silemezsiniz" });
+      }
+
+      await db.delete(users).where(eq(users.id, req.params.id));
+      res.json({ message: "Kullanıcı silindi" });
+    } catch (error) {
+      res.status(500).json({ error: "Kullanıcı silinemedi" });
     }
   });
 

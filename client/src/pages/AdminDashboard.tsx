@@ -27,6 +27,7 @@ import {
   ShoppingCart,
   ClipboardList,
   Activity,
+  Shield,
 } from "lucide-react";
 import type { Appointment, ContactMessage } from "@shared/schema";
 import { SEO } from "@/components/SEO";
@@ -227,6 +228,12 @@ export default function AdminDashboard() {
                 <Button variant="outline" data-testid="link-session-notes">
                   <Activity className="w-4 h-4 mr-2" />
                   Seans Notları
+                </Button>
+              </Link>
+              <Link href="/admin/users">
+                <Button variant="outline" data-testid="link-users">
+                  <Shield className="w-4 h-4 mr-2" />
+                  Kullanıcı Yönetimi
                 </Button>
               </Link>
               <Link href="/admin/blog">
