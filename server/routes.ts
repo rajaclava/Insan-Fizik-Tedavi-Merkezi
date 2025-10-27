@@ -1,12 +1,13 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertAppointmentSchema, insertContactMessageSchema, insertBlogPostSchema, insertTestimonialSchema, insertPatientSchema, insertTherapistSchema, insertPackageSchema, insertPurchaseSchema, insertTreatmentPlanSchema, insertSessionNoteSchema, users } from "@shared/schema";
+import { insertAppointmentSchema, insertContactMessageSchema, insertBlogPostSchema, insertTestimonialSchema, insertPatientSchema, insertTherapistSchema, insertPackageSchema, insertPurchaseSchema, insertTreatmentPlanSchema, insertSessionNoteSchema, users, therapists } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { z } from "zod";
 import passport from "passport";
 import { requireAuth } from "./auth";
 import { db } from "./db";
+import bcrypt from "bcrypt";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
@@ -390,12 +391,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/therapists", requireAuth, async (req, res) => {
     try {
-      const data = insertTherapistSchema.parse(req.body);
-      const therapist = await storage.createTherapist(data);
+      const { username, email, password, title, expertise, bio, workHours } = req.body;
+      
+      if (!username || !email || !password || !title) {
+        return res.status(400).json({ error: "Username, email, password ve title zorunludur" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Use transaction to ensure atomic user + therapist creation
+      const therapist = await db.transaction(async (tx) => {
+        const { or, eq } = await import("drizzle-orm");
+        
+        // Check if username or email already exists
+        const existingUser = await tx.select().from(users).where(
+          or(
+            eq(users.username, username),
+            eq(users.email, email)
+          )
+        ).limit(1);
+
+        if (existingUser.length > 0) {
+          throw new Error("Bu kullanıcı adı veya email zaten kullanılıyor");
+        }
+
+        // Create user account
+        const [newUser] = await tx.insert(users).values({
+          username,
+          email,
+          password: hashedPassword,
+          role: "therapist",
+          isVerified: true,
+        }).returning();
+
+        // Create therapist record (within same transaction)
+        const therapistData = {
+          userId: newUser.id,
+          title,
+          expertise: expertise || [],
+          bio: bio || undefined,
+          workHours: workHours || undefined,
+        };
+        
+        const validatedData = insertTherapistSchema.parse(therapistData);
+        const [newTherapist] = await tx.insert(therapists).values(validatedData as any).returning();
+        return newTherapist;
+      });
+
       res.status(201).json(therapist);
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof z.ZodError) {
         res.status(400).json({ error: fromZodError(error).message });
+      } else if (error.message?.includes("kullanıcı adı veya email")) {
+        res.status(400).json({ error: error.message });
+      } else if (error.code === '23505') { // Unique constraint violation
+        res.status(409).json({ error: "Bu kullanıcı adı veya email zaten kullanılıyor" });
       } else {
         res.status(500).json({ error: "Failed to create therapist" });
       }

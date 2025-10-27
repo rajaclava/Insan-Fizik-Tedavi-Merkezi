@@ -13,6 +13,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Plus, Edit, Trash2, UserCog } from "lucide-react";
+import { z } from "zod";
+
+// Create form schema with user credentials
+const createTherapistFormSchema = insertTherapistSchema.omit({ userId: true }).extend({
+  username: z.string().min(3, "Kullanıcı adı en az 3 karakter olmalıdır"),
+  email: z.string().email("Geçerli bir email adresi giriniz"),
+  password: z.string().min(6, "Şifre en az 6 karakter olmalıdır"),
+});
+
+type CreateTherapistForm = z.infer<typeof createTherapistFormSchema>;
 
 export default function AdminTherapists() {
   const { toast } = useToast();
@@ -25,16 +35,21 @@ export default function AdminTherapists() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: InsertTherapist) => {
+    mutationFn: async (data: CreateTherapistForm) => {
       return apiRequest("POST", "/api/therapists", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/therapists"] });
       setCreateOpen(false);
-      toast({ title: "Başarılı", description: "Fizyoterapist kaydı oluşturuldu" });
+      createForm.reset();
+      toast({ title: "Başarılı", description: "Fizyoterapist ve kullanıcı hesabı oluşturuldu" });
     },
-    onError: () => {
-      toast({ title: "Hata", description: "Fizyoterapist kaydı oluşturulamadı", variant: "destructive" });
+    onError: (error: any) => {
+      toast({ 
+        title: "Hata", 
+        description: error?.message || "Fizyoterapist kaydı oluşturulamadı", 
+        variant: "destructive" 
+      });
     },
   });
 
@@ -66,10 +81,12 @@ export default function AdminTherapists() {
     },
   });
 
-  const createForm = useForm<InsertTherapist>({
-    resolver: zodResolver(insertTherapistSchema),
+  const createForm = useForm<CreateTherapistForm>({
+    resolver: zodResolver(createTherapistFormSchema),
     defaultValues: {
-      userId: "",
+      username: "",
+      email: "",
+      password: "",
       title: "",
       expertise: [],
       bio: "",
@@ -88,7 +105,7 @@ export default function AdminTherapists() {
     },
   });
 
-  const handleCreateSubmit = (data: InsertTherapist) => {
+  const handleCreateSubmit = (data: CreateTherapistForm) => {
     const cleanedData = {
       ...data,
       expertise: data.expertise && data.expertise.length > 0 ? data.expertise : [],
@@ -209,12 +226,38 @@ export default function AdminTherapists() {
             <form onSubmit={createForm.handleSubmit(handleCreateSubmit)} className="space-y-4">
               <FormField
                 control={createForm.control}
-                name="userId"
+                name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Kullanıcı ID *</FormLabel>
+                    <FormLabel>Kullanıcı Adı *</FormLabel>
                     <FormControl>
-                      <Input {...field} data-testid="input-userid" />
+                      <Input {...field} placeholder="john_doe" data-testid="input-username" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email *</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="email" placeholder="john@example.com" data-testid="input-email" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Şifre *</FormLabel>
+                    <FormControl>
+                      <Input {...field} type="password" placeholder="••••••" data-testid="input-password" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
