@@ -122,10 +122,11 @@ export const patients = pgTable("patients", {
   fullName: text("full_name").notNull(),
   birthDate: text("birth_date"),
   gender: text("gender"), // Male, Female, Other
-  phone: text("phone").notNull(),
+  phone: text("phone").notNull().unique(), // Unique for OTP login
   email: text("email"),
   address: text("address"),
   notes: text("notes"), // Private admin notes
+  isVerified: boolean("is_verified").notNull().default(false), // Phone verification
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
