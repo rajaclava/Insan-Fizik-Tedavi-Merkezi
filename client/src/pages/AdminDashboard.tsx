@@ -25,6 +25,8 @@ import {
   Stethoscope,
   Package,
   ShoppingCart,
+  ClipboardList,
+  Activity,
 } from "lucide-react";
 import type { Appointment, ContactMessage } from "@shared/schema";
 import { SEO } from "@/components/SEO";
@@ -213,6 +215,18 @@ export default function AdminDashboard() {
                 <Button variant="outline" data-testid="link-purchases">
                   <ShoppingCart className="w-4 h-4 mr-2" />
                   Satın Almalar
+                </Button>
+              </Link>
+              <Link href="/admin/treatment-plans">
+                <Button variant="outline" data-testid="link-treatment-plans">
+                  <ClipboardList className="w-4 h-4 mr-2" />
+                  Tedavi Planları
+                </Button>
+              </Link>
+              <Link href="/admin/session-notes">
+                <Button variant="outline" data-testid="link-session-notes">
+                  <Activity className="w-4 h-4 mr-2" />
+                  Seans Notları
                 </Button>
               </Link>
               <Link href="/admin/blog">
