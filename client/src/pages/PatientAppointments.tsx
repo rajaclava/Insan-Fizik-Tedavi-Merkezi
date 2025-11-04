@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { Calendar, Clock, ArrowLeft } from "lucide-react";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 interface Appointment {
   id: string;
@@ -15,7 +16,7 @@ interface Appointment {
   createdAt: string;
 }
 
-export default function PatientAppointments() {
+function PatientAppointmentsContent() {
   const [, setLocation] = useLocation();
 
   const { data: appointments, isLoading } = useQuery<Appointment[]>({
@@ -111,5 +112,13 @@ export default function PatientAppointments() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function PatientAppointments() {
+  return (
+    <ProtectedRoute allowedRoles={["patient"]}>
+      <PatientAppointmentsContent />
+    </ProtectedRoute>
   );
 }

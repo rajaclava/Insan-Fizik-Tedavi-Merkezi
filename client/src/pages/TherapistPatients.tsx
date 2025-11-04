@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { ArrowLeft, User, Phone, Mail } from "lucide-react";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 interface Patient {
   id: string;
@@ -15,7 +16,7 @@ interface Patient {
   createdAt: string;
 }
 
-export default function TherapistPatients() {
+function TherapistPatientsContent() {
   const [, setLocation] = useLocation();
 
   const { data: patients, isLoading } = useQuery<Patient[]>({
@@ -105,5 +106,13 @@ export default function TherapistPatients() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function TherapistPatients() {
+  return (
+    <ProtectedRoute allowedRoles={["therapist"]}>
+      <TherapistPatientsContent />
+    </ProtectedRoute>
   );
 }

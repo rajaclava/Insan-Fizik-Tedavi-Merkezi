@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { ArrowLeft, Activity } from "lucide-react";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 interface SessionNote {
   id: string;
@@ -16,7 +17,7 @@ interface SessionNote {
   createdAt: string;
 }
 
-export default function TherapistSessionNotes() {
+function TherapistSessionNotesContent() {
   const [, setLocation] = useLocation();
 
   const { data: notes, isLoading } = useQuery<SessionNote[]>({
@@ -119,5 +120,13 @@ export default function TherapistSessionNotes() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function TherapistSessionNotes() {
+  return (
+    <ProtectedRoute allowedRoles={["therapist"]}>
+      <TherapistSessionNotesContent />
+    </ProtectedRoute>
   );
 }
