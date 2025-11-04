@@ -43,6 +43,7 @@ export const appointments = pgTable("appointments", {
   status: text("status").notNull().default("pending"), // PENDING, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW
   channel: text("channel").default("Clinic"), // Clinic, Online
   message: text("message"),
+  createdByReceptionistId: varchar("created_by_receptionist_id"), // Track which receptionist created this appointment
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -128,6 +129,7 @@ export const patients = pgTable("patients", {
   address: text("address"),
   notes: text("notes"), // Private admin notes
   isVerified: boolean("is_verified").notNull().default(false), // Phone verification
+  createdByReceptionistId: varchar("created_by_receptionist_id"), // Track which receptionist registered this patient
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -382,6 +384,65 @@ export const insertOtpCodeSchema = createInsertSchema(otpCodes).omit({
 
 export type InsertOtpCode = z.infer<typeof insertOtpCodeSchema>;
 export type OtpCode = typeof otpCodes.$inferSelect;
+
+// Receptionists table - Profile for receptionist users
+export const receptionists = pgTable("receptionists", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(), // Must have user account
+  fullName: text("full_name").notNull(),
+  phone: text("phone"),
+  shiftHours: json("shift_hours").$type<Record<string, any>>(), // JSON: {monday: {start: "09:00", end: "17:00"}, ...}
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertReceptionistSchema = createInsertSchema(receptionists).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertReceptionist = z.infer<typeof insertReceptionistSchema>;
+export type Receptionist = typeof receptionists.$inferSelect;
+
+// Patient Registrations table - Audit log for every patient intake/registration event
+export const patientRegistrations = pgTable("patient_registrations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  patientId: varchar("patient_id").notNull(), // Reference to patients table
+  receptionistId: varchar("receptionist_id").notNull(), // Which receptionist registered
+  registrationType: text("registration_type").notNull().default("new"), // new, follow_up, appointment
+  source: text("source").default("walk-in"), // walk-in, phone, online
+  notes: text("notes"), // Notes about this specific registration event
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertPatientRegistrationSchema = createInsertSchema(patientRegistrations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertPatientRegistration = z.infer<typeof insertPatientRegistrationSchema>;
+export type PatientRegistration = typeof patientRegistrations.$inferSelect;
+
+// Cash Transactions table - Track payments received at reception
+export const cashTransactions = pgTable("cash_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  patientId: varchar("patient_id"), // Optional - link to patient if known
+  receptionistId: varchar("receptionist_id").notNull(), // Which receptionist received payment
+  amount: integer("amount").notNull(), // Amount in Turkish Lira (TRY) - stored as integer (kuruş)
+  paymentMethod: text("payment_method").notNull().default("cash"), // cash, card, transfer
+  description: text("description"), // What the payment was for
+  receiptNumber: text("receipt_number"), // Receipt/invoice number
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertCashTransactionSchema = createInsertSchema(cashTransactions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertCashTransaction = z.infer<typeof insertCashTransactionSchema>;
+export type CashTransaction = typeof cashTransactions.$inferSelect;
 
 // ==================== STATIC TYPES ====================
 
