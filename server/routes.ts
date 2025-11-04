@@ -1,11 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertAppointmentSchema, insertContactMessageSchema, insertBlogPostSchema, insertTestimonialSchema, insertPatientSchema, insertTherapistSchema, insertPackageSchema, insertPurchaseSchema, insertTreatmentPlanSchema, insertSessionNoteSchema, users, therapists, patients, appointments as appointmentsTable, treatmentPlans, sessionNotes } from "@shared/schema";
+import { insertAppointmentSchema, insertContactMessageSchema, insertBlogPostSchema, insertTestimonialSchema, insertPatientSchema, insertTherapistSchema, insertPackageSchema, insertPurchaseSchema, insertTreatmentPlanSchema, insertSessionNoteSchema, insertPatientRegistrationSchema, insertCashTransactionSchema, users, therapists, patients, appointments as appointmentsTable, treatmentPlans, sessionNotes, patientRegistrations, cashTransactions, receptionists } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { z } from "zod";
 import passport from "passport";
-import { requireAuth, requireAdmin, requirePatient, requireTherapist } from "./auth";
+import { requireAuth, requireAdmin, requirePatient, requireTherapist, requireReceptionist } from "./auth";
 import { db } from "./db";
 import bcrypt from "bcrypt";
 import { sendOTP, verifyOTP } from "./otp";
@@ -247,6 +247,169 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(uniquePatients);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch patients" });
+    }
+  });
+
+  // ==================== RECEPTIONIST ROUTES ====================
+  
+  // Create new patient and log registration
+  app.post("/api/receptionist/patients", requireReceptionist, async (req, res) => {
+    try {
+      const validatedData = insertPatientSchema.parse(req.body);
+      
+      // Add receptionist tracking if not admin
+      const receptionistId = req.receptionist?.id;
+      const patientData = receptionistId 
+        ? { ...validatedData, createdByReceptionistId: receptionistId }
+        : validatedData;
+      
+      // Create patient
+      const [newPatient] = await db.insert(patients).values(patientData).returning();
+      
+      // Log registration event if done by receptionist
+      if (receptionistId) {
+        await db.insert(patientRegistrations).values({
+          patientId: newPatient.id,
+          receptionistId: receptionistId,
+          registrationType: 'new',
+          source: req.body.source || 'walk-in',
+          notes: req.body.registrationNotes,
+        });
+      }
+      
+      res.json(newPatient);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        const validationError = fromZodError(error);
+        res.status(400).json({ error: validationError.message });
+      } else {
+        res.status(500).json({ error: "Failed to create patient" });
+      }
+    }
+  });
+
+  // Get all patients
+  app.get("/api/receptionist/patients", requireReceptionist, async (req, res) => {
+    try {
+      const allPatients = await db.select().from(patients).orderBy(patients.createdAt);
+      res.json(allPatients);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch patients" });
+    }
+  });
+
+  // Update patient
+  app.patch("/api/receptionist/patients/:id", requireReceptionist, async (req, res) => {
+    try {
+      const { eq } = await import("drizzle-orm");
+      const validatedData = insertPatientSchema.partial().parse(req.body);
+      
+      const [updatedPatient] = await db
+        .update(patients)
+        .set({ ...validatedData, updatedAt: new Date() })
+        .where(eq(patients.id, req.params.id))
+        .returning();
+      
+      if (!updatedPatient) {
+        return res.status(404).json({ error: "Patient not found" });
+      }
+      
+      res.json(updatedPatient);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        const validationError = fromZodError(error);
+        res.status(400).json({ error: validationError.message });
+      } else {
+        res.status(500).json({ error: "Failed to update patient" });
+      }
+    }
+  });
+
+  // Get registrations (receptionist sees their own, admin sees all)
+  app.get("/api/receptionist/registrations", requireReceptionist, async (req, res) => {
+    try {
+      const { eq } = await import("drizzle-orm");
+      
+      let registrationsQuery = db.select().from(patientRegistrations);
+      
+      // Filter by receptionist if not admin
+      if (req.receptionist) {
+        registrationsQuery = registrationsQuery.where(eq(patientRegistrations.receptionistId, req.receptionist.id));
+      }
+      
+      const registrations = await registrationsQuery.orderBy(patientRegistrations.createdAt);
+      res.json(registrations);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch registrations" });
+    }
+  });
+
+  // Create manual registration log
+  app.post("/api/receptionist/registrations", requireReceptionist, async (req, res) => {
+    try {
+      const receptionistId = req.receptionist?.id;
+      if (!receptionistId) {
+        return res.status(403).json({ error: "Only receptionists can log registrations" });
+      }
+      
+      const validatedData = insertPatientRegistrationSchema.parse({
+        ...req.body,
+        receptionistId,
+      });
+      
+      const [newRegistration] = await db.insert(patientRegistrations).values(validatedData).returning();
+      res.json(newRegistration);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        const validationError = fromZodError(error);
+        res.status(400).json({ error: validationError.message });
+      } else {
+        res.status(500).json({ error: "Failed to create registration" });
+      }
+    }
+  });
+
+  // Get transactions (receptionist sees their own, admin sees all)
+  app.get("/api/receptionist/transactions", requireReceptionist, async (req, res) => {
+    try {
+      const { eq } = await import("drizzle-orm");
+      
+      let transactionsQuery = db.select().from(cashTransactions);
+      
+      // Filter by receptionist if not admin
+      if (req.receptionist) {
+        transactionsQuery = transactionsQuery.where(eq(cashTransactions.receptionistId, req.receptionist.id));
+      }
+      
+      const transactions = await transactionsQuery.orderBy(cashTransactions.createdAt);
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch transactions" });
+    }
+  });
+
+  // Create transaction (payment record)
+  app.post("/api/receptionist/transactions", requireReceptionist, async (req, res) => {
+    try {
+      const receptionistId = req.receptionist?.id;
+      if (!receptionistId) {
+        return res.status(403).json({ error: "Only receptionists can record transactions" });
+      }
+      
+      const validatedData = insertCashTransactionSchema.parse({
+        ...req.body,
+        receptionistId,
+      });
+      
+      const [newTransaction] = await db.insert(cashTransactions).values(validatedData).returning();
+      res.json(newTransaction);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        const validationError = fromZodError(error);
+        res.status(400).json({ error: validationError.message });
+      } else {
+        res.status(500).json({ error: "Failed to create transaction" });
+      }
     }
   });
 
@@ -1025,6 +1188,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ==================== Admin Reception Statistics ====================
+  
+  // Get reception statistics (admin only)
+  app.get("/api/admin/reception/stats", requireAdmin, async (req, res) => {
+    try {
+      const { sql, count } = await import("drizzle-orm");
+      
+      // Get total registrations count
+      const [totalRegistrationsResult] = await db.select({ count: count() }).from(patientRegistrations);
+      const totalRegistrations = totalRegistrationsResult?.count || 0;
+      
+      // Get total patients count
+      const [totalPatientsResult] = await db.select({ count: count() }).from(patients);
+      const totalPatients = totalPatientsResult?.count || 0;
+      
+      // Get total transactions count and sum
+      const [transactionsResult] = await db.select({ 
+        count: count(),
+        total: sql<number>`COALESCE(SUM(${cashTransactions.amount}), 0)`
+      }).from(cashTransactions);
+      
+      const totalTransactions = transactionsResult?.count || 0;
+      const totalRevenue = transactionsResult?.total || 0;
+      
+      // Get per-receptionist stats
+      const receptionistStats = await db
+        .select({
+          receptionistId: receptionists.id,
+          receptionistName: receptionists.fullName,
+          registrationsCount: count(patientRegistrations.id),
+        })
+        .from(receptionists)
+        .leftJoin(patientRegistrations, eq(receptionists.id, patientRegistrations.receptionistId))
+        .groupBy(receptionists.id, receptionists.fullName);
+      
+      res.json({
+        totalRegistrations,
+        totalPatients,
+        totalTransactions,
+        totalRevenue,
+        receptionistStats,
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch reception statistics" });
+    }
+  });
+  
   // ==================== Admin User Management Routes ====================
   
   // Get all users (admin only)
