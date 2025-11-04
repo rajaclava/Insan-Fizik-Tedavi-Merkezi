@@ -44,6 +44,65 @@ Preferred communication style: Simple, everyday language.
 - E2E test passed: login, view stats, register patient, view patient list, logout
 - Test data includes 3 registrations, 3 transactions totaling ₺2250
 
+### November 4, 2025 - CRM & Marketing Attribution System (Latest)
+
+**Complete Patient Journey Tracking**:
+- Transformed receptionist panel into full CRM system with status-based patient journey tracking
+- Added patient registration status workflow: `registered` → `waiting` → `converted` (sale) or `cancelled`
+- Implemented conversion funnel analytics for measuring marketing ROI by registration source
+- Added status history audit trail tracking all patient journey transitions with timestamps
+
+**Database Schema Enhancements**:
+- Extended `patient_registrations` table with:
+  - `status` enum: 'registered', 'waiting', 'converted', 'cancelled'
+  - `saleAmount` integer (in kuruş) for tracking conversion revenue
+  - `convertedAt`, `cancelledAt` timestamps for funnel analysis
+- Created `patient_registration_status_history` table for complete audit trail of status changes
+- Updated registration source taxonomy to match marketing channels: 'kurumZiyaret', 'instagram', 'googleAds', 'webSitesi', 'tavsiye', 'doktorYonlendirmesi'
+
+**Backend CRM API**:
+- `PATCH /api/receptionist/registrations/:id/status` - Update registration status (waiting/cancelled)
+- `POST /api/receptionist/registrations/:id/convert` - Convert registration to sale with revenue amount
+- `GET /api/admin/reception/funnel` - Comprehensive funnel metrics with source breakdown, conversion rates, and revenue totals
+- All status changes automatically logged to history table with receptionist attribution
+
+**Frontend CRM Features**:
+- Redesigned `ReceptionistPatients` page as full CRM registration tracking interface
+- Added status badges (Kayıtlı/Beklemede/Satış/İptal) with color-coded visual indicators
+- Implemented conversion dialog for recording sale amounts and notes
+- Added source chips displaying marketing channel attribution
+- Quick action buttons for status management (Convert to Sale, Set Waiting, Cancel)
+- Real-time query invalidation ensures dashboard updates immediately after conversions
+
+**Admin Funnel Analytics Dashboard**:
+- Added "Dönüşüm Hunisi (Genel)" card showing overall conversion metrics:
+  - Total registrations, status breakdowns (registered/waiting/converted/cancelled)
+  - Overall conversion rate percentage
+  - Total revenue from conversions
+- Added "Kaynağa Göre Dönüşüm" table with per-source marketing attribution:
+  - Registration counts by source
+  - Conversion counts and rates by channel
+  - Revenue totals per marketing source
+  - Enables ROI measurement for marketing campaigns
+
+**Bug Fixes & Validation**:
+- Fixed apiRequest parameter order in mutations (method, path, body signature)
+- Added sale amount validation preventing NaN and negative values
+- Fixed default registration source (null instead of invalid enum value)
+- Added comprehensive query invalidation for real-time funnel updates
+
+**Testing & Validation**:
+- E2E test passed: complete patient journey from registration → conversion → admin funnel verification
+- Verified conversion workflow updates funnel metrics in real-time
+- Tested Instagram source attribution tracking end-to-end
+- Confirmed status history audit trail logging works correctly
+
+**Business Value**:
+- Marketing ROI measurement: Track which channels (Instagram, Google Ads, Web Sitesi, etc.) generate actual sales
+- Conversion funnel analysis: Identify where patients drop off in the journey
+- Receptionist performance tracking: Monitor conversion rates and revenue per receptionist
+- Complete audit trail: Every status change logged with timestamp and user attribution
+
 ### November 4, 2025 - Admin Panel Refactor and Appointment Management Enhancement
 
 **Admin Navigation Improvement**:
