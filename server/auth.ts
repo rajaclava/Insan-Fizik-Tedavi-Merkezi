@@ -4,7 +4,7 @@ import type { Express } from "express";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import { db } from "./db";
-import { users, therapists } from "@shared/schema";
+import { users, therapists, receptionists } from "@shared/schema";
 import type { User as DbUser } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -139,5 +139,36 @@ export function requirePatient(req: any, res: any, next: any) {
   if (req.user.role !== "patient") {
     return res.status(403).json({ message: "Bu işlem sadece hastalar için" });
   }
+  next();
+}
+
+export async function requireReceptionist(req: any, res: any, next: any) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Giriş yapmanız gerekiyor" });
+  }
+  if (req.user.role !== "admin" && req.user.role !== "receptionist") {
+    return res.status(403).json({ message: "Bu işlem için sekreter yetkisi gerekiyor" });
+  }
+  
+  // Load the receptionist record from receptionists table (skip for admins)
+  if (req.user.role === "receptionist") {
+    try {
+      const [receptionist] = await db
+        .select()
+        .from(receptionists)
+        .where(eq(receptionists.userId, req.user.id))
+        .limit(1);
+      
+      if (!receptionist) {
+        return res.status(403).json({ message: "Sekreter kaydı bulunamadı" });
+      }
+      
+      // Attach receptionist record to request for use in routes
+      req.receptionist = receptionist;
+    } catch (error) {
+      return res.status(500).json({ message: "Sekreter bilgileri yüklenirken hata oluştu" });
+    }
+  }
+  
   next();
 }
