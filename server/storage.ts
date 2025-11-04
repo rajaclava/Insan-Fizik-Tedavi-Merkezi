@@ -40,6 +40,7 @@ export interface IStorage {
   getAllAppointments(): Promise<Appointment[]>;
   getAppointment(id: string): Promise<Appointment | undefined>;
   updateAppointmentStatus(id: string, status: string): Promise<Appointment | undefined>;
+  updateAppointment(id: string, updates: Partial<InsertAppointment>): Promise<Appointment | undefined>;
   deleteAppointment(id: string): Promise<void>;
   
   // ========== Contact Messages ==========
@@ -167,6 +168,14 @@ export class MemStorage implements IStorage {
     const appointment = this.appointments.get(id);
     if (!appointment) return undefined;
     const updated = { ...appointment, status };
+    this.appointments.set(id, updated);
+    return updated;
+  }
+
+  async updateAppointment(id: string, updates: Partial<InsertAppointment>): Promise<Appointment | undefined> {
+    const appointment = this.appointments.get(id);
+    if (!appointment) return undefined;
+    const updated = { ...appointment, ...updates, updatedAt: new Date() };
     this.appointments.set(id, updated);
     return updated;
   }
@@ -406,6 +415,15 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db
       .update(appointments)
       .set({ status })
+      .where(eq(appointments.id, id))
+      .returning();
+    return updated;
+  }
+
+  async updateAppointment(id: string, updates: Partial<InsertAppointment>): Promise<Appointment | undefined> {
+    const [updated] = await db
+      .update(appointments)
+      .set({ ...updates, updatedAt: new Date() })
       .where(eq(appointments.id, id))
       .returning();
     return updated;

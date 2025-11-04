@@ -16,6 +16,7 @@ import Contact from "@/pages/Contact";
 import Appointment from "@/pages/Appointment";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
+import AdminAppointments from "@/pages/AdminAppointments";
 import AdminBlogManager from "@/pages/AdminBlogManager";
 import AdminTestimonialsManager from "@/pages/AdminTestimonialsManager";
 import AdminPatients from "@/pages/AdminPatients";
@@ -57,6 +58,7 @@ function Router() {
       <Route path="/therapist/session-notes" component={TherapistSessionNotes} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin/appointments" component={AdminAppointments} />
       <Route path="/admin/blog" component={AdminBlogManager} />
       <Route path="/admin/testimonials" component={AdminTestimonialsManager} />
       <Route path="/admin/patients" component={AdminPatients} />

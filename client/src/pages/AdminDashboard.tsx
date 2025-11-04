@@ -500,7 +500,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
-      </main>
+      </div>
 
       <Dialog open={!!selectedAppointment} onOpenChange={() => setSelectedAppointment(null)}>
         <DialogContent data-testid="dialog-appointment-detail">
@@ -616,7 +616,6 @@ export default function AdminDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      </div>
     </AdminLayout>
   );
 }

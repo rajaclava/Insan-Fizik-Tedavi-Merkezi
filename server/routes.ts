@@ -125,6 +125,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Users routes
+  app.get("/api/users/therapists", requireAdmin, async (req, res) => {
+    try {
+      const { eq } = await import("drizzle-orm");
+      const therapistUsers = await db.select().from(users).where(eq(users.role, "PHYSIO"));
+      const usersWithoutPasswords = therapistUsers.map(({ password, ...user }) => user);
+      res.json(usersWithoutPasswords);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch therapists" });
+    }
+  });
+
   app.post("/api/appointments", async (req, res) => {
     try {
       const validatedData = insertAppointmentSchema.parse(req.body);
@@ -168,6 +180,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid status" });
       }
       const appointment = await storage.updateAppointmentStatus(req.params.id, status);
+      if (!appointment) {
+        return res.status(404).json({ error: "Appointment not found" });
+      }
+      res.json(appointment);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update appointment" });
+    }
+  });
+
+  app.patch("/api/appointments/:id", requireAdmin, async (req, res) => {
+    try {
+      const updates = req.body;
+      const appointment = await storage.updateAppointment(req.params.id, updates);
       if (!appointment) {
         return res.status(404).json({ error: "Appointment not found" });
       }
