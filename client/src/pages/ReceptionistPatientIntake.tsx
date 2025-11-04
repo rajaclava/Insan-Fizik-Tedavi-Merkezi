@@ -46,7 +46,7 @@ export default function ReceptionistPatientIntake() {
       gender: "",
       address: "",
       notes: "",
-      source: "walk-in",
+      source: "kurumZiyaret",
       registrationNotes: "",
     },
   });
@@ -239,9 +239,12 @@ export default function ReceptionistPatientIntake() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="walk-in">Yürüyerek</SelectItem>
-                          <SelectItem value="phone">Telefon</SelectItem>
-                          <SelectItem value="online">Online</SelectItem>
+                          <SelectItem value="kurumZiyaret">Kurum Ziyaret</SelectItem>
+                          <SelectItem value="instagram">Instagram</SelectItem>
+                          <SelectItem value="googleAds">Google Ads</SelectItem>
+                          <SelectItem value="webSitesi">Web Sitesi</SelectItem>
+                          <SelectItem value="tavsiye">Tavsiye</SelectItem>
+                          <SelectItem value="doktorYonlendirmesi">Doktor Yönlendirmesi</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
