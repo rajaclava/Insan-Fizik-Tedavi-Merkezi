@@ -93,7 +93,7 @@ export function AdminSidebar() {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("/api/auth/logout", { method: "POST" });
+      await apiRequest("POST", "/api/auth/logout");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
