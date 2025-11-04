@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
-import { Users, FileText, Activity, LogOut, User } from "lucide-react";
+import { Users, FileText, Activity, LogOut, User, Calendar } from "lucide-react";
 
 export default function TherapistDashboard() {
   const [, setLocation] = useLocation();
@@ -51,7 +51,22 @@ export default function TherapistDashboard() {
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="hover-elevate cursor-pointer" onClick={() => setLocation("/therapist/appointments")}>
+            <CardHeader>
+              <Calendar className="h-8 w-8 text-primary mb-2" />
+              <CardTitle>Randevularım</CardTitle>
+              <CardDescription>
+                Atanmış randevularınızı görüntüleyin
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full" data-testid="button-appointments">
+                Görüntüle
+              </Button>
+            </CardContent>
+          </Card>
+
           <Card className="hover-elevate cursor-pointer" onClick={() => setLocation("/therapist/patients")}>
             <CardHeader>
               <Users className="h-8 w-8 text-primary mb-2" />

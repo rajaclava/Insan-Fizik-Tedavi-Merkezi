@@ -211,6 +211,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Therapist routes - Get therapist's own appointments
+  app.get("/api/therapist/appointments", requireTherapist, async (req, res) => {
+    try {
+      const { eq } = await import("drizzle-orm");
+      const therapistAppointments = await db
+        .select()
+        .from(appointmentsTable)
+        .where(eq(appointmentsTable.therapistId, req.user!.id));
+      res.json(therapistAppointments);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch appointments" });
+    }
+  });
+
+  // Get therapist's patients (from appointments)
+  app.get("/api/therapist/patients", requireTherapist, async (req, res) => {
+    try {
+      const { eq, and } = await import("drizzle-orm");
+      
+      // Get unique patients that have appointments with this therapist
+      const appointmentsWithPatients = await db
+        .select({
+          patient: patients
+        })
+        .from(appointmentsTable)
+        .innerJoin(patients, eq(appointmentsTable.patientId, patients.id))
+        .where(eq(appointmentsTable.therapistId, req.user!.id));
+      
+      // Deduplicate patients by ID
+      const uniquePatients = Array.from(
+        new Map(appointmentsWithPatients.map(item => [item.patient.id, item.patient])).values()
+      );
+      
+      res.json(uniquePatients);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch patients" });
+    }
+  });
+
   app.post("/api/contact", async (req, res) => {
     try {
       const validatedData = insertContactMessageSchema.parse(req.body);
