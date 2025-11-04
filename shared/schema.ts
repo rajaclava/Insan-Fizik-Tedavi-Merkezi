@@ -406,13 +406,19 @@ export type InsertReceptionist = z.infer<typeof insertReceptionistSchema>;
 export type Receptionist = typeof receptionists.$inferSelect;
 
 // Patient Registrations table - Audit log for every patient intake/registration event
+// This is a CRM/marketing attribution system - tracks patient journey from registration to conversion
 export const patientRegistrations = pgTable("patient_registrations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   patientId: varchar("patient_id").notNull(), // Reference to patients table
   receptionistId: varchar("receptionist_id").notNull(), // Which receptionist registered
   registrationType: text("registration_type").notNull().default("new"), // new, follow_up, appointment
-  source: text("source").default("walk-in"), // walk-in, phone, online
+  source: text("source").default("kurumZiyaret"), // kurumZiyaret, instagram, googleAds, webSitesi, tavsiye, doktorYonlendirmesi
+  status: text("status").notNull().default("registered"), // registered, waiting, converted, cancelled
   notes: text("notes"), // Notes about this specific registration event
+  convertedAt: timestamp("converted_at"), // When registration converted to sale
+  cancelledAt: timestamp("cancelled_at"), // When registration was cancelled
+  saleAmount: integer("sale_amount"), // Sale amount in kuruş (if converted)
+  cancellationReason: text("cancellation_reason"), // Why was it cancelled
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -423,6 +429,25 @@ export const insertPatientRegistrationSchema = createInsertSchema(patientRegistr
 
 export type InsertPatientRegistration = z.infer<typeof insertPatientRegistrationSchema>;
 export type PatientRegistration = typeof patientRegistrations.$inferSelect;
+
+// Patient Registration Status History - Audit log for status changes
+export const patientRegistrationStatusHistory = pgTable("patient_registration_status_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  registrationId: varchar("registration_id").notNull(), // Reference to patient_registrations
+  fromStatus: text("from_status"), // Previous status (null if initial)
+  toStatus: text("to_status").notNull(), // New status
+  changedByUserId: varchar("changed_by_user_id"), // Who made the change
+  reason: text("reason"), // Why the status changed
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertPatientRegistrationStatusHistorySchema = createInsertSchema(patientRegistrationStatusHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertPatientRegistrationStatusHistory = z.infer<typeof insertPatientRegistrationStatusHistorySchema>;
+export type PatientRegistrationStatusHistory = typeof patientRegistrationStatusHistory.$inferSelect;
 
 // Cash Transactions table - Track payments received at reception
 export const cashTransactions = pgTable("cash_transactions", {
