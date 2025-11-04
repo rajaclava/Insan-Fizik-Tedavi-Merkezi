@@ -87,6 +87,11 @@ export default function AdminDashboard() {
     enabled: !!user,
   });
 
+  const { data: funnelMetrics } = useQuery<any>({
+    queryKey: ["/api/admin/reception/funnel"],
+    enabled: !!user,
+  });
+
   const logoutMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/auth/logout"),
     onSuccess: () => {
@@ -400,6 +405,115 @@ export default function AdminDashboard() {
               )}
             </CardContent>
           </Card>
+
+          {/* Conversion Funnel Metrics */}
+          {funnelMetrics && (
+            <>
+              <Card data-testid="card-funnel-overview">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Dönüşüm Hunisi (Genel)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Toplam Kayıt</p>
+                      <p className="text-lg font-bold" data-testid="text-funnel-total">
+                        {funnelMetrics.overall?.total || 0}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Kayıtlı</p>
+                      <p className="text-lg font-bold" data-testid="text-funnel-registered">
+                        {funnelMetrics.overall?.registered || 0}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Beklemede</p>
+                      <p className="text-lg font-bold text-yellow-600" data-testid="text-funnel-waiting">
+                        {funnelMetrics.overall?.waiting || 0}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Satış</p>
+                      <p className="text-lg font-bold text-green-600" data-testid="text-funnel-converted">
+                        {funnelMetrics.overall?.converted || 0}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">İptal</p>
+                      <p className="text-lg font-bold text-red-600" data-testid="text-funnel-cancelled">
+                        {funnelMetrics.overall?.cancelled || 0}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">Dönüşüm Oranı</p>
+                      <p className="text-xl font-bold text-green-600" data-testid="text-conversion-rate">
+                        {funnelMetrics.overall?.conversionRate || "0.00"}%
+                      </p>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Toplam Satış: ₺{((funnelMetrics.overall?.totalSales || 0) / 100).toFixed(2)}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card data-testid="card-funnel-by-source">
+                <CardHeader>
+                  <CardTitle>Kaynağa Göre Dönüşüm</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {funnelMetrics.bySource && funnelMetrics.bySource.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left p-2">Kaynak</th>
+                            <th className="text-right p-2">Toplam</th>
+                            <th className="text-right p-2">Satış</th>
+                            <th className="text-right p-2">Beklemede</th>
+                            <th className="text-right p-2">İptal</th>
+                            <th className="text-right p-2">Dönüşüm %</th>
+                            <th className="text-right p-2">Gelir</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {funnelMetrics.bySource.map((source: any) => {
+                            const sourceLabels: Record<string, string> = {
+                              kurumZiyaret: "Kurum Ziyaret",
+                              instagram: "Instagram",
+                              googleAds: "Google Ads",
+                              webSitesi: "Web Sitesi",
+                              tavsiye: "Tavsiye",
+                              doktorYonlendirmesi: "Doktor Yönlendirmesi",
+                            };
+                            return (
+                              <tr key={source.source} className="border-b hover-elevate" data-testid={`funnel-row-${source.source}`}>
+                                <td className="p-2 font-medium">{sourceLabels[source.source] || source.source}</td>
+                                <td className="text-right p-2">{source.total}</td>
+                                <td className="text-right p-2 text-green-600 font-medium">{source.converted}</td>
+                                <td className="text-right p-2 text-yellow-600">{source.waiting}</td>
+                                <td className="text-right p-2 text-red-600">{source.cancelled}</td>
+                                <td className="text-right p-2 font-bold">{source.conversionRate}%</td>
+                                <td className="text-right p-2">₺{((source.totalSales || 0) / 100).toFixed(2)}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Henüz veri yok</p>
+                  )}
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
 
         <div className="mt-8 grid gap-6">

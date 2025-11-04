@@ -66,10 +66,11 @@ export default function ReceptionistPatients() {
   // Status update mutation
   const statusMutation = useMutation({
     mutationFn: async ({ id, status, reason }: { id: string; status: string; reason?: string }) => {
-      return await apiRequest(`/api/receptionist/registrations/${id}/status`, "PATCH", { status, reason });
+      return await apiRequest("PATCH", `/api/receptionist/registrations/${id}/status`, { status, reason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/receptionist/registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/reception/funnel"] });
       toast({ title: "Durum güncellendi" });
     },
     onError: () => {
@@ -80,10 +81,12 @@ export default function ReceptionistPatients() {
   // Conversion mutation
   const convertMutation = useMutation({
     mutationFn: async ({ id, saleAmount, notes }: { id: string; saleAmount: number; notes?: string }) => {
-      return await apiRequest(`/api/receptionist/registrations/${id}/convert`, "POST", { saleAmount, notes });
+      return await apiRequest("POST", `/api/receptionist/registrations/${id}/convert`, { saleAmount, notes });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/receptionist/registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/reception/funnel"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/reception/stats"] });
       setConvertDialogOpen(false);
       setSelectedRegistration(null);
       setSaleAmount("");
