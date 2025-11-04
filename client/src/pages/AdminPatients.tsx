@@ -71,6 +71,7 @@ export default function AdminPatients() {
     resolver: zodResolver(insertPatientSchema),
     defaultValues: {
       fullName: "",
+      tcNumber: "",
       phone: "",
       email: "",
       birthDate: "",
@@ -84,6 +85,7 @@ export default function AdminPatients() {
     resolver: zodResolver(insertPatientSchema),
     defaultValues: {
       fullName: "",
+      tcNumber: "",
       phone: "",
       email: "",
       birthDate: "",
@@ -96,6 +98,7 @@ export default function AdminPatients() {
   const handleCreateSubmit = (data: InsertPatient) => {
     const cleanedData = {
       ...data,
+      tcNumber: data.tcNumber || undefined,
       email: data.email || undefined,
       birthDate: data.birthDate || undefined,
       gender: data.gender || undefined,
@@ -110,6 +113,7 @@ export default function AdminPatients() {
     if (selectedPatient) {
       const cleanedData = {
         ...data,
+        tcNumber: data.tcNumber || undefined,
         email: data.email || undefined,
         birthDate: data.birthDate || undefined,
         gender: data.gender || undefined,
@@ -125,6 +129,7 @@ export default function AdminPatients() {
     setSelectedPatient(patient);
     editForm.reset({
       fullName: patient.fullName,
+      tcNumber: patient.tcNumber ?? "",
       phone: patient.phone,
       email: patient.email ?? "",
       birthDate: patient.birthDate ?? "",
@@ -194,6 +199,19 @@ export default function AdminPatients() {
                         <FormLabel>Ad Soyad *</FormLabel>
                         <FormControl>
                           <Input {...field} data-testid="input-fullname" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={createForm.control}
+                    name="tcNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>TC Kimlik Numarası</FormLabel>
+                        <FormControl>
+                          <Input {...field} maxLength={11} placeholder="12345678901" data-testid="input-tc-number" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -352,6 +370,12 @@ export default function AdminPatients() {
                       <h3 className="font-medium text-lg">{patient.fullName}</h3>
                     </div>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                      {patient.tcNumber && (
+                        <div className="flex items-center gap-1 font-medium">
+                          <span>TC:</span>
+                          {patient.tcNumber}
+                        </div>
+                      )}
                       <div className="flex items-center gap-1">
                         <Phone className="w-3 h-3" />
                         {patient.phone}
@@ -419,6 +443,19 @@ export default function AdminPatients() {
                       <FormLabel>Ad Soyad *</FormLabel>
                       <FormControl>
                         <Input {...field} data-testid="input-edit-fullname" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="tcNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>TC Kimlik Numarası</FormLabel>
+                      <FormControl>
+                        <Input {...field} maxLength={11} placeholder="12345678901" data-testid="input-edit-tc-number" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

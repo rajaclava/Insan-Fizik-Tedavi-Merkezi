@@ -120,6 +120,7 @@ export const patients = pgTable("patients", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id"), // Optional - if patient has account
   fullName: text("full_name").notNull(),
+  tcNumber: text("tc_number").unique(), // TC Kimlik Numarası
   birthDate: text("birth_date"),
   gender: text("gender"), // Male, Female, Other
   phone: text("phone").notNull().unique(), // Unique for OTP login
