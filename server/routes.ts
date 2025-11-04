@@ -255,7 +255,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create new patient and log registration
   app.post("/api/receptionist/patients", requireReceptionist, async (req, res) => {
     try {
+      console.log('[CREATE PATIENT] Request body:', req.body);
       const validatedData = insertPatientSchema.parse(req.body);
+      console.log('[CREATE PATIENT] Validated data:', validatedData);
       
       // Add receptionist tracking if not admin
       const receptionistId = req.receptionist?.id;
@@ -263,22 +265,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? { ...validatedData, createdByReceptionistId: receptionistId }
         : validatedData;
       
+      console.log('[CREATE PATIENT] Patient data to insert:', patientData);
+      
       // Create patient
       const [newPatient] = await db.insert(patients).values(patientData).returning();
+      console.log('[CREATE PATIENT] Patient created:', newPatient.id);
       
       // Log registration event if done by receptionist
       if (receptionistId) {
-        await db.insert(patientRegistrations).values({
+        const registrationData = {
           patientId: newPatient.id,
           receptionistId: receptionistId,
           registrationType: 'new',
-          source: req.body.source || 'walk-in',
+          source: req.body.source || null,
           notes: req.body.registrationNotes,
-        });
+        };
+        console.log('[CREATE PATIENT] Registration data to insert:', registrationData);
+        await db.insert(patientRegistrations).values(registrationData);
+        console.log('[CREATE PATIENT] Registration logged');
       }
       
       res.json(newPatient);
     } catch (error: any) {
+      console.error('[CREATE PATIENT] Error:', error);
       if (error.name === "ZodError") {
         const validationError = fromZodError(error);
         res.status(400).json({ error: validationError.message });
@@ -1288,7 +1297,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get reception statistics (admin only)
   app.get("/api/admin/reception/stats", requireAdmin, async (req, res) => {
     try {
-      const { sql, count } = await import("drizzle-orm");
+      const { sql, count, eq } = await import("drizzle-orm");
       
       // Get total registrations count
       const [totalRegistrationsResult] = await db.select({ count: count() }).from(patientRegistrations);
@@ -1326,6 +1335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         receptionistStats,
       });
     } catch (error) {
+      console.error('[ADMIN STATS] Error:', error);
       res.status(500).json({ error: "Failed to fetch reception statistics" });
     }
   });
