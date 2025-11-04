@@ -82,6 +82,11 @@ export default function AdminDashboard() {
     enabled: !!user,
   });
 
+  const { data: receptionStats } = useQuery<any>({
+    queryKey: ["/api/admin/reception/stats"],
+    enabled: !!user,
+  });
+
   const logoutMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/auth/logout"),
     onSuccess: () => {
@@ -339,6 +344,62 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </Link>
+
+          <Card data-testid="card-reception-stats">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Sekreter İstatistikleri
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {receptionStats ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Toplam Kayıt</p>
+                      <p className="text-lg font-bold" data-testid="text-total-registrations">
+                        {receptionStats.totalRegistrations || 0}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Toplam Hasta</p>
+                      <p className="text-lg font-bold" data-testid="text-total-patients">
+                        {receptionStats.totalPatients || 0}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Toplam İşlem</p>
+                      <p className="text-lg font-bold" data-testid="text-total-transactions">
+                        {receptionStats.totalTransactions || 0}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Toplam Gelir</p>
+                      <p className="text-lg font-bold" data-testid="text-reception-revenue">
+                        ₺{((receptionStats.totalRevenue || 0) / 100).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                  {receptionStats.receptionistStats && receptionStats.receptionistStats.length > 0 && (
+                    <div className="mt-4 pt-4 border-t">
+                      <p className="text-sm font-medium mb-2">Sekreter Başına Kayıtlar</p>
+                      <div className="space-y-2">
+                        {receptionStats.receptionistStats.map((stat: any) => (
+                          <div key={stat.receptionistId} className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">{stat.receptionistName}</span>
+                            <span className="font-medium">{stat.registrationsCount}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Yükleniyor...</p>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         <div className="mt-8 grid gap-6">
