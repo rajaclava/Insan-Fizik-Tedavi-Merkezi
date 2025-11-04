@@ -218,7 +218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const therapistAppointments = await db
         .select()
         .from(appointmentsTable)
-        .where(eq(appointmentsTable.therapistId, req.user!.id));
+        .where(eq(appointmentsTable.therapistId, req.therapist.id));
       res.json(therapistAppointments);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch appointments" });
@@ -237,7 +237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .from(appointmentsTable)
         .innerJoin(patients, eq(appointmentsTable.patientId, patients.id))
-        .where(eq(appointmentsTable.therapistId, req.user!.id));
+        .where(eq(appointmentsTable.therapistId, req.therapist.id));
       
       // Deduplicate patients by ID
       const uniquePatients = Array.from(

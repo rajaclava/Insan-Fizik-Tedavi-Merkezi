@@ -4,7 +4,7 @@ import type { Express } from "express";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 import { db } from "./db";
-import { users } from "@shared/schema";
+import { users, therapists } from "@shared/schema";
 import type { User as DbUser } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -104,14 +104,32 @@ export function requireAdmin(req: any, res: any, next: any) {
   next();
 }
 
-export function requireTherapist(req: any, res: any, next: any) {
+export async function requireTherapist(req: any, res: any, next: any) {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Giriş yapmanız gerekiyor" });
   }
   if (req.user.role !== "admin" && req.user.role !== "therapist") {
     return res.status(403).json({ message: "Bu işlem için terapist yetkisi gerekiyor" });
   }
-  next();
+  
+  // Load the therapist record from therapists table
+  try {
+    const [therapist] = await db
+      .select()
+      .from(therapists)
+      .where(eq(therapists.userId, req.user.id))
+      .limit(1);
+    
+    if (!therapist) {
+      return res.status(403).json({ message: "Terapist kaydı bulunamadı" });
+    }
+    
+    // Attach therapist record to request for use in routes
+    req.therapist = therapist;
+    next();
+  } catch (error) {
+    return res.status(500).json({ message: "Terapist bilgileri yüklenirken hata oluştu" });
+  }
 }
 
 export function requirePatient(req: any, res: any, next: any) {

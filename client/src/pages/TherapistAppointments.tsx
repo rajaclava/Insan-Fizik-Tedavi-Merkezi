@@ -53,7 +53,7 @@ export default function TherapistAppointments() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setLocation("/therapist")}
+              onClick={() => setLocation("/therapist/dashboard")}
               data-testid="button-back"
             >
               <ArrowLeft className="h-5 w-5" />
