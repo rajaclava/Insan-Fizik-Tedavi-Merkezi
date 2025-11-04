@@ -45,7 +45,7 @@ export default function ReceptionistLogin() {
         throw new Error(error.message || "Giriş başarısız");
       }
 
-      const user = await response.json();
+      const { user } = await response.json();
       
       if (user.role === "receptionist" || user.role === "admin") {
         toast({
