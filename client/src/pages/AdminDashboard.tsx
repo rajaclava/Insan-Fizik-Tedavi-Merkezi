@@ -32,6 +32,7 @@ import {
 import type { Appointment, ContactMessage } from "@shared/schema";
 import { SEO } from "@/components/SEO";
 import { useToast } from "@/hooks/use-toast";
+import { AdminLayout } from "@/components/AdminLayout";
 import {
   Dialog,
   DialogContent,
@@ -179,168 +180,178 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-muted">
+    <AdminLayout>
       <SEO
         title="Yönetim Paneli"
         description="İnsan Fizik Tedavi Yönetim Paneli"
         path="/admin"
       />
 
-      <header className="bg-card border-b">
-        <div className="container mx-auto px-4 lg:px-8 py-4">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <h1 className="text-2xl font-semibold text-foreground">Yönetim Paneli</h1>
-              <p className="text-sm text-muted-foreground">Hoş geldiniz, Admin</p>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              <Link href="/admin/patients">
-                <Button variant="outline" data-testid="link-patients">
-                  <Users className="w-4 h-4 mr-2" />
-                  Hastalar
-                </Button>
-              </Link>
-              <Link href="/admin/therapists">
-                <Button variant="outline" data-testid="link-therapists">
-                  <Stethoscope className="w-4 h-4 mr-2" />
-                  Fizyoterapistler
-                </Button>
-              </Link>
-              <Link href="/admin/packages">
-                <Button variant="outline" data-testid="link-packages">
-                  <Package className="w-4 h-4 mr-2" />
-                  Paketler
-                </Button>
-              </Link>
-              <Link href="/admin/purchases">
-                <Button variant="outline" data-testid="link-purchases">
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Satın Almalar
-                </Button>
-              </Link>
-              <Link href="/admin/treatment-plans">
-                <Button variant="outline" data-testid="link-treatment-plans">
-                  <ClipboardList className="w-4 h-4 mr-2" />
-                  Tedavi Planları
-                </Button>
-              </Link>
-              <Link href="/admin/session-notes">
-                <Button variant="outline" data-testid="link-session-notes">
-                  <Activity className="w-4 h-4 mr-2" />
-                  Seans Notları
-                </Button>
-              </Link>
-              <Link href="/admin/users">
-                <Button variant="outline" data-testid="link-users">
-                  <Shield className="w-4 h-4 mr-2" />
-                  Kullanıcı Yönetimi
-                </Button>
-              </Link>
-              <Link href="/admin/blog">
-                <Button variant="outline" data-testid="link-blog-manager">
-                  <FileText className="w-4 h-4 mr-2" />
-                  Blog
-                </Button>
-              </Link>
-              <Link href="/admin/testimonials">
-                <Button variant="outline" data-testid="link-testimonials-manager">
-                  <Star className="w-4 h-4 mr-2" />
-                  Yorumlar
-                </Button>
-              </Link>
-              <Button
-                variant="outline"
-                onClick={() => logoutMutation.mutate()}
-                disabled={logoutMutation.isPending}
-                data-testid="button-logout"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Çıkış Yap
-              </Button>
-            </div>
-          </div>
+      <div className="container mx-auto p-6">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">Ana Panel</h1>
+          <p className="text-muted-foreground">Hoş geldiniz, Admin</p>
         </div>
-      </header>
 
-      <main className="container mx-auto px-4 lg:px-8 py-8">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-1">
-              <CardTitle className="text-sm font-medium">Toplam Randevu</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Bekleyen Randevular</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" data-testid="stat-total-appointments">
-                {appointments?.length || 0}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {pendingAppointments.length} beklemede
-              </p>
+              <div className="text-2xl font-bold">{pendingAppointments.length}</div>
+              <p className="text-xs text-muted-foreground">Onay bekliyor</p>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-1">
-              <CardTitle className="text-sm font-medium">İletişim Mesajları</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Yeni Mesajlar</CardTitle>
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold" data-testid="stat-total-messages">
-                {unreadMessages.length || 0}
-              </div>
-              <p className="text-xs text-muted-foreground">Toplam mesaj</p>
+              <div className="text-2xl font-bold">{unreadMessages.length}</div>
+              <p className="text-xs text-muted-foreground">Okunmamış</p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-1">
-              <CardTitle className="text-sm font-medium">Aktif Kullanıcı</CardTitle>
-              <User className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">1</div>
-              <p className="text-xs text-muted-foreground">Admin</p>
-            </CardContent>
-          </Card>
+          <Link href="/admin/patients">
+            <Card className="hover-elevate cursor-pointer">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Hastalar</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">-</div>
+                <p className="text-xs text-muted-foreground">Hasta yönetimi</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/admin/therapists">
+            <Card className="hover-elevate cursor-pointer">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Fizyoterapistler</CardTitle>
+                <Stethoscope className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">-</div>
+                <p className="text-xs text-muted-foreground">Terapist yönetimi</p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
-        <div className="grid gap-6">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <Link href="/admin/blog">
+            <Card className="hover-elevate cursor-pointer" data-testid="link-blog">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Blog Yönetimi
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Blog yazılarını oluştur ve düzenle
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/admin/testimonials">
+            <Card className="hover-elevate cursor-pointer" data-testid="link-testimonials">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="h-5 w-5" />
+                  Yorumlar
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Hasta yorumlarını onayla veya sil
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/admin/packages">
+            <Card className="hover-elevate cursor-pointer" data-testid="link-packages">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Paketler
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Tedavi paketlerini yönet
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/admin/treatment-plans">
+            <Card className="hover-elevate cursor-pointer" data-testid="link-treatment-plans">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5" />
+                  Tedavi Planları
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Hasta tedavi planlarını yönet
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/admin/session-notes">
+            <Card className="hover-elevate cursor-pointer" data-testid="link-session-notes">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Seans Notları
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Terapi seanslarını kaydet
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/admin/users">
+            <Card className="hover-elevate cursor-pointer" data-testid="link-users">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Kullanıcı Yönetimi
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Admin ve terapist kullanıcılarını yönet
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
+        <div className="mt-8 grid gap-6">
           <Card>
             <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <CardTitle>Randevular</CardTitle>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Ara..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8 w-full sm:w-[200px]"
-                      data-testid="input-search-appointments"
-                    />
-                  </div>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-full sm:w-[180px]" data-testid="select-status-filter">
-                      <SelectValue placeholder="Durum Filtrele" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tümü</SelectItem>
-                      <SelectItem value="pending">Beklemede</SelectItem>
-                      <SelectItem value="approved">Onaylandı</SelectItem>
-                      <SelectItem value="cancelled">İptal Edildi</SelectItem>
-                      <SelectItem value="completed">Tamamlandı</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+              <CardTitle>Son Randevular</CardTitle>
             </CardHeader>
             <CardContent>
               {appointmentsLoading ? (
                 <p className="text-muted-foreground">Yükleniyor...</p>
               ) : filteredAppointments && filteredAppointments.length > 0 ? (
                 <div className="space-y-4">
-                  {filteredAppointments.map((appointment) => (
+                  {filteredAppointments.slice(0, 5).map((appointment) => (
                     <div
                       key={appointment.id}
                       className="flex items-start justify-between p-4 border rounded-md hover-elevate"
@@ -605,6 +616,7 @@ export default function AdminDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }
