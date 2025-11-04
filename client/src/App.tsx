@@ -36,6 +36,10 @@ import TherapistDashboard from "@/pages/TherapistDashboard";
 import TherapistAppointments from "@/pages/TherapistAppointments";
 import TherapistPatients from "@/pages/TherapistPatients";
 import TherapistSessionNotes from "@/pages/TherapistSessionNotes";
+import ReceptionistLogin from "@/pages/ReceptionistLogin";
+import ReceptionistDashboard from "@/pages/ReceptionistDashboard";
+import ReceptionistPatientIntake from "@/pages/ReceptionistPatientIntake";
+import ReceptionistPatients from "@/pages/ReceptionistPatients";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -58,6 +62,10 @@ function Router() {
       <Route path="/therapist/appointments" component={TherapistAppointments} />
       <Route path="/therapist/patients" component={TherapistPatients} />
       <Route path="/therapist/session-notes" component={TherapistSessionNotes} />
+      <Route path="/receptionist/login" component={ReceptionistLogin} />
+      <Route path="/receptionist/dashboard" component={ReceptionistDashboard} />
+      <Route path="/receptionist/patient-intake" component={ReceptionistPatientIntake} />
+      <Route path="/receptionist/patients" component={ReceptionistPatients} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/appointments" component={AdminAppointments} />
