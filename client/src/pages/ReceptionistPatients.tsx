@@ -99,12 +99,24 @@ export default function ReceptionistPatients() {
   });
 
   const handleConvert = () => {
-    if (!selectedRegistration || !saleAmount) return;
-    const amountInKurus = Math.round(parseFloat(saleAmount) * 100);
+    if (!selectedRegistration) return;
+    
+    // Validate sale amount
+    const amount = parseFloat(saleAmount);
+    if (!saleAmount || isNaN(amount) || amount <= 0) {
+      toast({ 
+        title: "Hata", 
+        description: "Geçerli bir satış tutarı girin (0'dan büyük olmalı)", 
+        variant: "destructive" 
+      });
+      return;
+    }
+    
+    const amountInKurus = Math.round(amount * 100);
     convertMutation.mutate({
       id: selectedRegistration.id,
       saleAmount: amountInKurus,
-      notes: conversionNotes,
+      notes: conversionNotes || undefined,
     });
   };
 
