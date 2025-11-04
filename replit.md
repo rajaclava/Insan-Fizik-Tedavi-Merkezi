@@ -12,6 +12,38 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### November 4, 2025 - Receptionist Panel Implementation
+
+**Database Schema**:
+- Added `receptionists` table - Profile records for receptionist users with shift hours
+- Added `patient_registrations` table - Event log for every patient intake/registration (multiple per patient)
+- Added `cash_transactions` table - Track payments received at reception with payment method
+- Extended `patients` and `appointments` tables with `createdByReceptionistId` for attribution tracking
+
+**Backend API**:
+- Implemented `requireReceptionist` middleware allowing both receptionist and admin roles
+- Added `/api/receptionist/patients` - CRUD for patient management
+- Added `/api/receptionist/registrations` - List receptionist's registration history
+- Added `/api/receptionist/transactions` - List receptionist's payment transactions
+- Added `/api/admin/reception/stats` - Aggregated statistics for admin reporting
+
+**Frontend Pages**:
+- Created `ReceptionistLogin` - Authentication page for receptionist users
+- Created `ReceptionistDashboard` - KPI cards (registrations, transactions, revenue) and quick actions
+- Created `ReceptionistPatientIntake` - Comprehensive patient registration form with TC number, contact info, source tracking
+- Created `ReceptionistPatients` - Patient list with search/filter capabilities
+- Enhanced `AdminDashboard` - Added reception statistics widget showing totals and per-receptionist breakdowns
+
+**Security & Authorization**:
+- All receptionist endpoints protected with `requireReceptionist` middleware
+- Admin role has full access to receptionist features
+- Attribution tracking ensures audit trail for patient registrations and transactions
+
+**Testing**:
+- Created test receptionist user (username: `sekreter`, password: `sekreter123`)
+- E2E test passed: login, view stats, register patient, view patient list, logout
+- Test data includes 3 registrations, 3 transactions totaling ₺2250
+
 ### November 4, 2025 - Admin Panel Refactor and Appointment Management Enhancement
 
 **Admin Navigation Improvement**:
