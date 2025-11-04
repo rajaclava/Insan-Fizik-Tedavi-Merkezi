@@ -28,8 +28,12 @@ import AdminUsers from "@/pages/AdminUsers";
 import LoginSelect from "@/pages/LoginSelect";
 import PatientLogin from "@/pages/PatientLogin";
 import PatientDashboard from "@/pages/PatientDashboard";
+import PatientAppointments from "@/pages/PatientAppointments";
+import PatientTreatmentPlans from "@/pages/PatientTreatmentPlans";
 import TherapistLogin from "@/pages/TherapistLogin";
 import TherapistDashboard from "@/pages/TherapistDashboard";
+import TherapistPatients from "@/pages/TherapistPatients";
+import TherapistSessionNotes from "@/pages/TherapistSessionNotes";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -45,8 +49,12 @@ function Router() {
       <Route path="/login" component={LoginSelect} />
       <Route path="/patient/login" component={PatientLogin} />
       <Route path="/patient/dashboard" component={PatientDashboard} />
+      <Route path="/patient/appointments" component={PatientAppointments} />
+      <Route path="/patient/treatment-plans" component={PatientTreatmentPlans} />
       <Route path="/therapist/login" component={TherapistLogin} />
       <Route path="/therapist/dashboard" component={TherapistDashboard} />
+      <Route path="/therapist/patients" component={TherapistPatients} />
+      <Route path="/therapist/session-notes" component={TherapistSessionNotes} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/blog" component={AdminBlogManager} />

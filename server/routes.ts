@@ -1,11 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertAppointmentSchema, insertContactMessageSchema, insertBlogPostSchema, insertTestimonialSchema, insertPatientSchema, insertTherapistSchema, insertPackageSchema, insertPurchaseSchema, insertTreatmentPlanSchema, insertSessionNoteSchema, users, therapists } from "@shared/schema";
+import { insertAppointmentSchema, insertContactMessageSchema, insertBlogPostSchema, insertTestimonialSchema, insertPatientSchema, insertTherapistSchema, insertPackageSchema, insertPurchaseSchema, insertTreatmentPlanSchema, insertSessionNoteSchema, users, therapists, patients, appointments as appointmentsTable, treatmentPlans, sessionNotes } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { z } from "zod";
 import passport from "passport";
-import { requireAuth, requireAdmin } from "./auth";
+import { requireAuth, requireAdmin, requirePatient, requireTherapist } from "./auth";
 import { db } from "./db";
 import bcrypt from "bcrypt";
 import { sendOTP, verifyOTP } from "./otp";
@@ -854,6 +854,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ error: "Failed to delete session note" });
+    }
+  });
+
+  // ==================== Patient Routes ====================
+  
+  // Get patient's own appointments
+  app.get("/api/patient/appointments", requirePatient, async (req, res) => {
+    try {
+      const { eq } = await import("drizzle-orm");
+      const [patient] = await db.select().from(patients).where(
+        eq(patients.userId, req.user!.id)
+      ).limit(1);
+      
+      if (!patient) {
+        return res.status(404).json({ error: "Hasta kaydı bulunamadı" });
+      }
+
+      const patientAppointments = await db.select().from(appointmentsTable).where(
+        eq(appointmentsTable.patientId, patient.id)
+      );
+      
+      res.json(patientAppointments);
+    } catch (error) {
+      res.status(500).json({ error: "Randevular getirilemedi" });
+    }
+  });
+
+  // Get patient's own treatment plans
+  app.get("/api/patient/treatment-plans", requirePatient, async (req, res) => {
+    try {
+      const { eq } = await import("drizzle-orm");
+      const [patient] = await db.select().from(patients).where(
+        eq(patients.userId, req.user!.id)
+      ).limit(1);
+      
+      if (!patient) {
+        return res.status(404).json({ error: "Hasta kaydı bulunamadı" });
+      }
+
+      const plans = await db.select().from(treatmentPlans).where(
+        eq(treatmentPlans.patientId, patient.id)
+      );
+      
+      res.json(plans);
+    } catch (error) {
+      res.status(500).json({ error: "Tedavi planları getirilemedi" });
+    }
+  });
+
+  // ==================== Therapist Routes ====================
+  
+  // Get therapist's own patients
+  app.get("/api/therapist/patients", requireTherapist, async (req, res) => {
+    try {
+      const { eq } = await import("drizzle-orm");
+      const [therapist] = await db.select().from(therapists).where(
+        eq(therapists.userId, req.user!.id)
+      ).limit(1);
+      
+      if (!therapist) {
+        return res.status(404).json({ error: "Terapist kaydı bulunamadı" });
+      }
+
+      // Get patients assigned to this therapist via treatment plans
+      const plans = await db.select().from(treatmentPlans).where(
+        eq(treatmentPlans.therapistId, therapist.id)
+      );
+      
+      const patientIds = [...new Set(plans.map(p => p.patientId))];
+      
+      if (patientIds.length === 0) {
+        return res.json([]);
+      }
+
+      const { inArray } = await import("drizzle-orm");
+      const patientsData = await db.select().from(patients).where(
+        inArray(patients.id, patientIds)
+      );
+      
+      res.json(patientsData);
+    } catch (error) {
+      res.status(500).json({ error: "Hastalar getirilemedi" });
+    }
+  });
+
+  // Get therapist's own session notes
+  app.get("/api/therapist/session-notes", requireTherapist, async (req, res) => {
+    try {
+      const { eq } = await import("drizzle-orm");
+      const [therapist] = await db.select().from(therapists).where(
+        eq(therapists.userId, req.user!.id)
+      ).limit(1);
+      
+      if (!therapist) {
+        return res.status(404).json({ error: "Terapist kaydı bulunamadı" });
+      }
+
+      const notes = await db.select().from(sessionNotes).where(
+        eq(sessionNotes.therapistId, therapist.id)
+      );
+      
+      res.json(notes);
+    } catch (error) {
+      res.status(500).json({ error: "Seans notları getirilemedi" });
     }
   });
 
