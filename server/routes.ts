@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertAppointmentSchema, insertContactMessageSchema, insertBlogPostSchema, insertTestimonialSchema, insertPatientSchema, insertTherapistSchema, insertPackageSchema, insertPurchaseSchema, insertTreatmentPlanSchema, insertSessionNoteSchema, insertPatientRegistrationSchema, insertCashTransactionSchema, users, therapists, patients, appointments as appointmentsTable, treatmentPlans, sessionNotes, patientRegistrations, cashTransactions, receptionists } from "@shared/schema";
+import { insertAppointmentSchema, insertContactMessageSchema, insertBlogPostSchema, insertTestimonialSchema, insertPatientSchema, insertTherapistSchema, insertPackageSchema, insertPurchaseSchema, insertTreatmentPlanSchema, insertSessionNoteSchema, insertPatientRegistrationSchema, insertCashTransactionSchema, insertPatientRegistrationStatusHistorySchema, users, therapists, patients, appointments as appointmentsTable, treatmentPlans, sessionNotes, patientRegistrations, cashTransactions, receptionists, patientRegistrationStatusHistory } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { z } from "zod";
 import passport from "passport";
@@ -410,6 +410,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         res.status(500).json({ error: "Failed to create transaction" });
       }
+    }
+  });
+
+  // Update registration status (waiting, cancelled)
+  app.patch("/api/receptionist/registrations/:id/status", requireReceptionist, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, reason } = req.body;
+      const { eq } = await import("drizzle-orm");
+      
+      if (!status || !["waiting", "cancelled"].includes(status)) {
+        return res.status(400).json({ error: "Invalid status. Use 'waiting' or 'cancelled'" });
+      }
+
+      // Get current registration
+      const [currentReg] = await db.select().from(patientRegistrations).where(eq(patientRegistrations.id, id));
+      
+      if (!currentReg) {
+        return res.status(404).json({ error: "Registration not found" });
+      }
+
+      // Update registration
+      const updateData: any = { status };
+      if (status === "cancelled") {
+        updateData.cancelledAt = new Date();
+        updateData.cancellationReason = reason || null;
+      }
+
+      const [updated] = await db.update(patientRegistrations)
+        .set(updateData)
+        .where(eq(patientRegistrations.id, id))
+        .returning();
+
+      // Log status change to history
+      await db.insert(patientRegistrationStatusHistory).values({
+        registrationId: id,
+        fromStatus: currentReg.status,
+        toStatus: status,
+        changedByUserId: req.user?.id,
+        reason: reason || null,
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Status update error:", error);
+      res.status(500).json({ error: "Failed to update status" });
+    }
+  });
+
+  // Convert registration to sale
+  app.post("/api/receptionist/registrations/:id/convert", requireReceptionist, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { saleAmount, notes } = req.body;
+      const { eq } = await import("drizzle-orm");
+
+      if (!saleAmount || saleAmount <= 0) {
+        return res.status(400).json({ error: "Sale amount is required and must be positive" });
+      }
+
+      // Get current registration
+      const [currentReg] = await db.select().from(patientRegistrations).where(eq(patientRegistrations.id, id));
+      
+      if (!currentReg) {
+        return res.status(404).json({ error: "Registration not found" });
+      }
+
+      if (currentReg.status === "converted") {
+        return res.status(400).json({ error: "Registration already converted" });
+      }
+
+      // Update registration to converted
+      const [updated] = await db.update(patientRegistrations)
+        .set({
+          status: "converted",
+          convertedAt: new Date(),
+          saleAmount: saleAmount,
+          notes: notes || currentReg.notes,
+        })
+        .where(eq(patientRegistrations.id, id))
+        .returning();
+
+      // Log conversion to history
+      await db.insert(patientRegistrationStatusHistory).values({
+        registrationId: id,
+        fromStatus: currentReg.status,
+        toStatus: "converted",
+        changedByUserId: req.user?.id,
+        reason: `Satışa dönüştürüldü - ₺${(saleAmount / 100).toFixed(2)}`,
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Conversion error:", error);
+      res.status(500).json({ error: "Failed to convert registration" });
     }
   });
 
@@ -1232,6 +1327,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch reception statistics" });
+    }
+  });
+
+  // Get conversion funnel metrics (admin only)
+  app.get("/api/admin/reception/funnel", requireAdmin, async (req, res) => {
+    try {
+      const { sql, count, eq } = await import("drizzle-orm");
+      
+      // Get overall metrics
+      const [totalStats] = await db.select({ 
+        total: count(),
+        registered: sql<number>`COUNT(CASE WHEN ${patientRegistrations.status} = 'registered' THEN 1 END)`,
+        waiting: sql<number>`COUNT(CASE WHEN ${patientRegistrations.status} = 'waiting' THEN 1 END)`,
+        converted: sql<number>`COUNT(CASE WHEN ${patientRegistrations.status} = 'converted' THEN 1 END)`,
+        cancelled: sql<number>`COUNT(CASE WHEN ${patientRegistrations.status} = 'cancelled' THEN 1 END)`,
+        totalSales: sql<number>`COALESCE(SUM(CASE WHEN ${patientRegistrations.status} = 'converted' THEN ${patientRegistrations.saleAmount} ELSE 0 END), 0)`,
+      }).from(patientRegistrations);
+      
+      // Get per-source breakdown
+      const sourceMetrics = await db.select({
+        source: patientRegistrations.source,
+        total: count(),
+        registered: sql<number>`COUNT(CASE WHEN ${patientRegistrations.status} = 'registered' THEN 1 END)`,
+        waiting: sql<number>`COUNT(CASE WHEN ${patientRegistrations.status} = 'waiting' THEN 1 END)`,
+        converted: sql<number>`COUNT(CASE WHEN ${patientRegistrations.status} = 'converted' THEN 1 END)`,
+        cancelled: sql<number>`COUNT(CASE WHEN ${patientRegistrations.status} = 'cancelled' THEN 1 END)`,
+        totalSales: sql<number>`COALESCE(SUM(CASE WHEN ${patientRegistrations.status} = 'converted' THEN ${patientRegistrations.saleAmount} ELSE 0 END), 0)`,
+      })
+        .from(patientRegistrations)
+        .groupBy(patientRegistrations.source);
+      
+      // Calculate conversion rates
+      const enrichedSourceMetrics = sourceMetrics.map((metric: any) => ({
+        ...metric,
+        conversionRate: metric.total > 0 ? ((metric.converted / metric.total) * 100).toFixed(2) : "0.00",
+      }));
+      
+      const overallConversionRate = totalStats.total > 0 
+        ? ((totalStats.converted / totalStats.total) * 100).toFixed(2) 
+        : "0.00";
+      
+      res.json({
+        overall: {
+          ...totalStats,
+          conversionRate: overallConversionRate,
+        },
+        bySource: enrichedSourceMetrics,
+      });
+    } catch (error) {
+      console.error("Funnel metrics error:", error);
+      res.status(500).json({ error: "Failed to fetch funnel metrics" });
     }
   });
   
