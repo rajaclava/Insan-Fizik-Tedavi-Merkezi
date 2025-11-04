@@ -10,6 +10,36 @@ The application is built as a full-stack web application with a React frontend a
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### November 4, 2025 - Admin Panel Refactor and Appointment Management Enhancement
+
+**Admin Navigation Improvement**:
+- Refactored admin panel from header-based navigation to sidebar-based navigation using Shadcn sidebar primitives
+- Created `AdminSidebar` component with collapsible menu system
+- Created `AdminLayout` wrapper component for consistent admin page layouts
+- All admin pages now use the unified sidebar navigation system
+
+**Appointment Management Features**:
+- Enhanced AdminAppointments page with therapist assignment functionality
+- Added ability to assign physiotherapists to appointments via dropdown selection
+- Implemented appointment status management (Pending, Confirmed, Completed, Cancelled)
+- Added real-time appointment updates with automatic cache invalidation
+
+**Backend Enhancements**:
+- Added `PATCH /api/appointments/:id` endpoint (admin-only) for updating appointments
+- Added `GET /api/users/therapists` endpoint (admin-only) for fetching physiotherapist list
+- Implemented `updateAppointment` method in storage layer (both MemStorage and DatabaseStorage)
+- Enhanced security with `requireAdmin` middleware protecting sensitive endpoints
+
+**Bug Fixes**:
+- Fixed logout functionality in AdminSidebar (corrected apiRequest parameter order)
+- Fixed AdminLayout and SEO component imports (named exports)
+
+**Testing**:
+- Added comprehensive end-to-end test coverage for admin appointment management workflow
+- Validated therapist assignment, status updates, and logout functionality
+
 ## System Architecture
 
 ### Frontend Architecture
