@@ -10,15 +10,15 @@ interface User {
 }
 
 export function useUser() {
-  const { data: user, isLoading, error } = useQuery<User | null>({
+  const { data, isLoading, error } = useQuery<{ user: User } | null>({
     queryKey: ["/api/auth/me"],
     retry: false,
   });
 
   return {
-    user,
+    user: data?.user || null,
     isLoading,
-    isAuthenticated: !!user,
+    isAuthenticated: !!data?.user,
     error,
   };
 }
