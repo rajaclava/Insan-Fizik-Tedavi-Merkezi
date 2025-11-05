@@ -50,9 +50,11 @@ export default function ReceptionistLogin() {
       if (user.role === "receptionist" || user.role === "admin") {
         toast({
           title: "Giriş Başarılı",
-          description: `Hoş geldiniz, ${user.username}!`,
+          description: `Hoş geldiniz, ${user.username}! Panele yönlendiriliyorsunuz...`,
         });
-        setLocation("/receptionist/dashboard");
+        setTimeout(() => {
+          setLocation("/receptionist/dashboard");
+        }, 500);
       } else {
         throw new Error("Bu sayfa sadece sekreterler içindir");
       }
