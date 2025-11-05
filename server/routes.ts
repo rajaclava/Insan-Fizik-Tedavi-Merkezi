@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertAppointmentSchema, insertContactMessageSchema, insertBlogPostSchema, insertTestimonialSchema, insertPatientSchema, insertTherapistSchema, insertPackageSchema, insertPurchaseSchema, insertTreatmentPlanSchema, insertSessionNoteSchema, insertPatientRegistrationSchema, insertCashTransactionSchema, insertPatientRegistrationStatusHistorySchema, users, therapists, patients, appointments as appointmentsTable, treatmentPlans, sessionNotes, patientRegistrations, cashTransactions, receptionists, patientRegistrationStatusHistory } from "@shared/schema";
+import { insertAppointmentSchema, insertContactMessageSchema, insertBlogPostSchema, insertTestimonialSchema, insertPatientSchema, insertTherapistSchema, insertPackageSchema, insertPurchaseSchema, insertTreatmentPlanSchema, insertSessionNoteSchema, insertPatientRegistrationSchema, insertCashTransactionSchema, insertPatientRegistrationStatusHistorySchema, insertSmsSettingSchema, users, therapists, patients, appointments as appointmentsTable, treatmentPlans, sessionNotes, patientRegistrations, cashTransactions, receptionists, patientRegistrationStatusHistory, smsSettings } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { z } from "zod";
 import passport from "passport";
@@ -1475,6 +1475,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Kullanıcı silindi" });
     } catch (error) {
       res.status(500).json({ error: "Kullanıcı silinemedi" });
+    }
+  });
+
+  // ==================== Admin SMS Settings Routes ====================
+
+  // Get all SMS settings (admin only)
+  app.get("/api/admin/sms-settings", requireAdmin, async (req, res) => {
+    try {
+      const settings = await db.select().from(smsSettings);
+      res.json(settings);
+    } catch (error) {
+      res.status(500).json({ error: "SMS ayarları getirilemedi" });
+    }
+  });
+
+  // Get active SMS setting (admin only)
+  app.get("/api/admin/sms-settings/active", requireAdmin, async (req, res) => {
+    try {
+      const { eq } = await import("drizzle-orm");
+      const [activeSetting] = await db.select().from(smsSettings).where(
+        eq(smsSettings.isActive, true)
+      ).limit(1);
+      
+      res.json(activeSetting || null);
+    } catch (error) {
+      res.status(500).json({ error: "Aktif SMS ayarı getirilemedi" });
+    }
+  });
+
+  // Create SMS setting (admin only)
+  app.post("/api/admin/sms-settings", requireAdmin, async (req, res) => {
+    try {
+      const validatedData = insertSmsSettingSchema.parse(req.body);
+      
+      // If setting is active, deactivate all others
+      if (validatedData.isActive) {
+        await db.update(smsSettings).set({ isActive: false });
+      }
+
+      const [newSetting] = await db.insert(smsSettings).values(validatedData).returning();
+      res.status(201).json(newSetting);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ error: validationError.message });
+      }
+      res.status(500).json({ error: "SMS ayarı oluşturulamadı" });
+    }
+  });
+
+  // Update SMS setting (admin only)
+  app.patch("/api/admin/sms-settings/:id", requireAdmin, async (req, res) => {
+    try {
+      const { eq } = await import("drizzle-orm");
+      const validatedData = insertSmsSettingSchema.partial().parse(req.body);
+
+      // If setting is being activated, deactivate all others
+      if (validatedData.isActive) {
+        await db.update(smsSettings).set({ isActive: false });
+      }
+
+      const [updatedSetting] = await db.update(smsSettings)
+        .set({ ...validatedData, updatedAt: new Date() })
+        .where(eq(smsSettings.id, req.params.id))
+        .returning();
+
+      if (!updatedSetting) {
+        return res.status(404).json({ error: "SMS ayarı bulunamadı" });
+      }
+
+      res.json(updatedSetting);
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ error: validationError.message });
+      }
+      res.status(500).json({ error: "SMS ayarı güncellenemedi" });
+    }
+  });
+
+  // Delete SMS setting (admin only)
+  app.delete("/api/admin/sms-settings/:id", requireAdmin, async (req, res) => {
+    try {
+      const { eq } = await import("drizzle-orm");
+      await db.delete(smsSettings).where(eq(smsSettings.id, req.params.id));
+      res.json({ message: "SMS ayarı silindi" });
+    } catch (error) {
+      res.status(500).json({ error: "SMS ayarı silinemedi" });
     }
   });
 
