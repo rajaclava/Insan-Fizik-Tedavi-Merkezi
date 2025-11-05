@@ -469,6 +469,27 @@ export const insertCashTransactionSchema = createInsertSchema(cashTransactions).
 export type InsertCashTransaction = z.infer<typeof insertCashTransactionSchema>;
 export type CashTransaction = typeof cashTransactions.$inferSelect;
 
+// SMS Settings table - Admin configurable SMS provider settings
+export const smsSettings = pgTable("sms_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  provider: text("provider").notNull().default("twilio"), // twilio, netgsm, iletimerkezi, etc
+  accountSid: text("account_sid"), // Twilio Account SID or equivalent
+  authToken: text("auth_token"), // Twilio Auth Token or API key
+  fromNumber: text("from_number"), // Sender phone number
+  isActive: boolean("is_active").notNull().default(false), // Is this provider currently active
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSmsSettingSchema = createInsertSchema(smsSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertSmsSetting = z.infer<typeof insertSmsSettingSchema>;
+export type SmsSetting = typeof smsSettings.$inferSelect;
+
 // ==================== STATIC TYPES ====================
 
 // Services type (static data)
