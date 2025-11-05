@@ -63,12 +63,16 @@ export default function PatientLogin() {
 
   const sendOTPMutation = useMutation({
     mutationFn: async (data: EmailFormData) => {
-      const res = await apiRequest("POST", "/api/auth/send-otp-by-email", data) as any;
-      return res;
+      const res = await apiRequest("POST", "/api/auth/send-otp-by-email", data);
+      return await res.json();
     },
     onSuccess: (data: any) => {
+      console.log("sendOTPByEmail response:", data);
       if (data.phone) {
         setPhoneNumber(data.phone); // Save phone number for verification
+        console.log("Phone number set to:", data.phone);
+      } else {
+        console.warn("No phone number in response!");
       }
       toast({
         title: "Kod Gönderildi",
@@ -87,11 +91,12 @@ export default function PatientLogin() {
 
   const verifyOTPMutation = useMutation({
     mutationFn: async (data: OTPFormData) => {
+      console.log("Verifying OTP with phone:", phoneNumber, "code:", data.code);
       const res = await apiRequest("POST", "/api/auth/verify-otp", {
         phone: phoneNumber,
         code: data.code,
       });
-      return res;
+      return await res.json();
     },
     onSuccess: () => {
       toast({
