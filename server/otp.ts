@@ -1,10 +1,47 @@
 import { db } from "./db";
-import { otpCodes, patients, users } from "@shared/schema";
+import { otpCodes, patients, users, smsSettings } from "@shared/schema";
 import { eq, and, gt, lt, sql, desc } from "drizzle-orm";
 
 // Generate 6-digit OTP code
 export function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Send OTP by email (find patient by email, send SMS to their phone)
+export async function sendOTPByEmail(email: string): Promise<{ success: boolean; message: string; phone?: string }> {
+  try {
+    // Clean email
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Check if patient exists with this email
+    const [patient] = await db.select().from(patients).where(eq(patients.email, cleanEmail)).limit(1);
+    
+    if (!patient) {
+      return { success: false, message: "Bu email adresiyle kayıtlı hasta bulunamadı" };
+    }
+
+    if (!patient.phone) {
+      return { success: false, message: "Hasta kaydında telefon numarası bulunamadı" };
+    }
+
+    // Send OTP to patient's phone
+    const result = await sendOTP(patient.phone);
+    
+    if (result.success) {
+      // Mask phone number for privacy (e.g., 0532******44)
+      const maskedPhone = patient.phone.replace(/(\d{4})\d+(\d{2})/, '$1******$2');
+      return { 
+        success: true, 
+        message: `Doğrulama kodu ${maskedPhone} numarasına gönderildi`,
+        phone: patient.phone // Return for verification
+      };
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Email ile OTP gönderme hatası:", error);
+    return { success: false, message: "Kod gönderilemedi" };
+  }
 }
 
 // Send OTP (development: console log, production: Twilio)
@@ -44,30 +81,38 @@ export async function sendOTP(phone: string): Promise<{ success: boolean; messag
     // Send SMS (development: console log, production: Twilio or other SMS provider)
     const smsMessage = `İnsan Fizik Tedavi doğrulama kodunuz: ${code}\nGeçerlilik süresi: 5 dakika`;
     
-    // Production: Use Twilio if configured
-    if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
+    // Get active SMS settings from database
+    const [activeSetting] = await db.select().from(smsSettings).where(
+      eq(smsSettings.isActive, true)
+    ).limit(1);
+
+    if (activeSetting && activeSetting.accountSid && activeSetting.authToken && activeSetting.fromNumber) {
       try {
-        // TODO: After Twilio integration setup, uncomment below:
-        // const twilio = require('twilio');
-        // const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-        // await client.messages.create({
-        //   body: smsMessage,
-        //   from: process.env.TWILIO_PHONE_NUMBER,
-        //   to: cleanPhone
-        // });
-        console.log(`[PRODUCTION] SMS would be sent via Twilio to ${cleanPhone}: ${code}`);
-      } catch (twilioError) {
+        // Use Twilio for real SMS sending
+        const twilio = require('twilio');
+        const client = twilio(activeSetting.accountSid, activeSetting.authToken);
+        
+        await client.messages.create({
+          body: smsMessage,
+          from: activeSetting.fromNumber,
+          to: cleanPhone.startsWith('+') ? cleanPhone : `+90${cleanPhone.replace(/^0/, '')}`, // Format for Turkey
+        });
+        
+        console.log(`[SMS SENT] Twilio SMS sent to ${cleanPhone}: ${code}`);
+      } catch (twilioError: any) {
         console.error("Twilio SMS hatası:", twilioError);
         // Fallback to console log in case of error
         console.log(`[FALLBACK] OTP: ${code} for ${cleanPhone}`);
+        console.log(`Error: ${twilioError.message}`);
       }
     } else {
-      // Development: Log to console
+      // Development: Log to console (no SMS settings configured)
       console.log(`\n${"=".repeat(50)}`);
       console.log(`📱 OTP KODU: ${code}`);
       console.log(`📞 Telefon: ${cleanPhone}`);
       console.log(`📧 SMS Mesajı: ${smsMessage}`);
       console.log(`⏰ Geçerlilik: 5 dakika`);
+      console.log(`💡 Not: SMS ayarları yapılandırılmadı (Admin panel > SMS Ayarları)`);
       console.log(`${"=".repeat(50)}\n`);
     }
 

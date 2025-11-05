@@ -8,7 +8,7 @@ import passport from "passport";
 import { requireAuth, requireAdmin, requirePatient, requireTherapist, requireReceptionist } from "./auth";
 import { db } from "./db";
 import bcrypt from "bcrypt";
-import { sendOTP, verifyOTP } from "./otp";
+import { sendOTP, sendOTPByEmail, verifyOTP } from "./otp";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
@@ -56,6 +56,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (result.success) {
         res.json({ message: result.message });
+      } else {
+        res.status(400).json({ error: result.message });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Kod gönderilemedi" });
+    }
+  });
+
+  // Send OTP by email (for patient login)
+  app.post("/api/auth/send-otp-by-email", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ error: "Email adresi gerekli" });
+      }
+
+      const result = await sendOTPByEmail(email);
+      
+      if (result.success) {
+        res.json({ message: result.message, phone: result.phone });
       } else {
         res.status(400).json({ error: result.message });
       }
