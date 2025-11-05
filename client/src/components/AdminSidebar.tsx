@@ -22,6 +22,7 @@ import {
   ClipboardList,
   Stethoscope,
   LogOut,
+  Settings,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -84,6 +85,11 @@ const menuItems = [
     title: "Kullanıcı Yönetimi",
     url: "/admin/users",
     icon: UserCog,
+  },
+  {
+    title: "SMS Ayarları",
+    url: "/admin/sms-settings",
+    icon: Settings,
   },
 ];
 
