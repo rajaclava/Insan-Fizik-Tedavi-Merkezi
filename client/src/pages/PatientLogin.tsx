@@ -23,13 +23,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Phone, Lock } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
 
-const phoneSchema = z.object({
-  phone: z.string()
-    .min(10, "Geçerli bir telefon numarası girin")
-    .max(15, "Telefon numarası çok uzun")
-    .regex(/^[0-9+\s-]+$/, "Sadece rakam, +, boşluk ve - kullanabilirsiniz"),
+const emailSchema = z.object({
+  email: z.string()
+    .email("Geçerli bir email adresi girin")
+    .min(1, "Email adresi gereklidir"),
 });
 
 const otpSchema = z.object({
@@ -38,19 +37,20 @@ const otpSchema = z.object({
     .regex(/^[0-9]+$/, "Sadece rakam giriniz"),
 });
 
-type PhoneFormData = z.infer<typeof phoneSchema>;
+type EmailFormData = z.infer<typeof emailSchema>;
 type OTPFormData = z.infer<typeof otpSchema>;
 
 export default function PatientLogin() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [step, setStep] = useState<"phone" | "otp">("phone");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [step, setStep] = useState<"email" | "otp">("email");
+  const [emailAddress, setEmailAddress] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState(""); // Will be received from backend
 
-  const phoneForm = useForm<PhoneFormData>({
-    resolver: zodResolver(phoneSchema),
+  const emailForm = useForm<EmailFormData>({
+    resolver: zodResolver(emailSchema),
     defaultValues: {
-      phone: "",
+      email: "",
     },
   });
 
@@ -62,11 +62,14 @@ export default function PatientLogin() {
   });
 
   const sendOTPMutation = useMutation({
-    mutationFn: async (data: PhoneFormData) => {
-      const res = await apiRequest("POST", "/api/auth/send-otp", data) as any;
+    mutationFn: async (data: EmailFormData) => {
+      const res = await apiRequest("POST", "/api/auth/send-otp-by-email", data) as any;
       return res;
     },
     onSuccess: (data: any) => {
+      if (data.phone) {
+        setPhoneNumber(data.phone); // Save phone number for verification
+      }
       toast({
         title: "Kod Gönderildi",
         description: data?.message || "Doğrulama kodu telefonunuza gönderildi",
@@ -106,8 +109,8 @@ export default function PatientLogin() {
     },
   });
 
-  const onPhoneSubmit = (data: PhoneFormData) => {
-    setPhoneNumber(data.phone);
+  const onEmailSubmit = (data: EmailFormData) => {
+    setEmailAddress(data.email);
     sendOTPMutation.mutate(data);
   };
 
@@ -116,13 +119,13 @@ export default function PatientLogin() {
   };
 
   const handleResendCode = () => {
-    if (phoneNumber) {
-      sendOTPMutation.mutate({ phone: phoneNumber });
+    if (emailAddress) {
+      sendOTPMutation.mutate({ email: emailAddress });
     }
   };
 
-  const handleChangePhone = () => {
-    setStep("phone");
+  const handleChangeEmail = () => {
+    setStep("email");
     otpForm.reset();
   };
 
@@ -132,30 +135,30 @@ export default function PatientLogin() {
         <CardHeader>
           <CardTitle className="text-2xl text-center">Hasta Girişi</CardTitle>
           <CardDescription className="text-center">
-            {step === "phone" 
-              ? "Telefon numaranızı girerek devam edin"
-              : "Size gönderilen doğrulama kodunu girin"}
+            {step === "email" 
+              ? "Email adresinizi girerek devam edin"
+              : "Telefonunuza gönderilen doğrulama kodunu girin"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {step === "phone" ? (
-            <Form {...phoneForm}>
-              <form onSubmit={phoneForm.handleSubmit(onPhoneSubmit)} className="space-y-6">
+          {step === "email" ? (
+            <Form {...emailForm}>
+              <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-6">
                 <FormField
-                  control={phoneForm.control}
-                  name="phone"
+                  control={emailForm.control}
+                  name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Telefon Numarası</FormLabel>
+                      <FormLabel>Email Adresi</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                           <Input
                             {...field}
-                            type="tel"
-                            placeholder="0532 612 72 44"
+                            type="email"
+                            placeholder="ornek@email.com"
                             className="pl-10"
-                            data-testid="input-phone"
+                            data-testid="input-email"
                           />
                         </div>
                       </FormControl>
@@ -177,15 +180,15 @@ export default function PatientLogin() {
             <Form {...otpForm}>
               <form onSubmit={otpForm.handleSubmit(onOTPSubmit)} className="space-y-6">
                 <div className="text-sm text-muted-foreground text-center mb-4">
-                  <Phone className="inline h-4 w-4 mr-1" />
-                  {phoneNumber}
+                  <Mail className="inline h-4 w-4 mr-1" />
+                  {emailAddress}
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={handleChangePhone}
+                    onClick={handleChangeEmail}
                     className="ml-2 underline"
-                    data-testid="button-change-phone"
+                    data-testid="button-change-email"
                   >
                     Değiştir
                   </Button>
